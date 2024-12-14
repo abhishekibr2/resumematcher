@@ -1,5 +1,4 @@
-const mongoose = require('mongoose');
-
+import mongoose from "mongoose";
 const addressSchema = new mongoose.Schema({
   street: String,
   city: String,
@@ -54,6 +53,7 @@ const resumeSchema = new mongoose.Schema({
   contact: contactSchema,
   summary: String,
   skills: [String],
+  custom_status: String,
   workExperience: [workExperienceSchema],
   education: [educationSchema],
   certifications: [certificationSchema],
