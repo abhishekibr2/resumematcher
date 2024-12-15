@@ -10,6 +10,7 @@ import { Resume } from '@/models/resume';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { File } from 'buffer';
 
 // Define the expected JSON structure for resume parsing
 const resumeJson = {
