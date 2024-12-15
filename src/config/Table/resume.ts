@@ -134,7 +134,11 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
       className: "w-[150px]",
       sortable: true,
       filterable: true,
-      type: "boolean"
+      type: "select",
+      options: [
+        { label: "Checked", value: "true" },
+        { label: "Unchecked", value: "false" }
+      ]
     }
   ],
   search: {

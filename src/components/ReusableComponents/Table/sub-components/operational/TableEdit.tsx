@@ -80,7 +80,7 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
     const { toast } = useToast()
 
     useEffect(() => {
-        console.log({data})
+        console.log({config})
     }, [])
 
     const handleUpdate = async () => {
