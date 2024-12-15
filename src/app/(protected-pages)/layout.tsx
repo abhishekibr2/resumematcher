@@ -1,7 +1,6 @@
 "use client"
 
 import { AppSidebar } from "@/components/App-Sidebar";
-import Navbar from "@/components/NavBar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";

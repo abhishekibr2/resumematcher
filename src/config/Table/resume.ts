@@ -116,6 +116,15 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
       sortable: true,
       filterable: true,
       type: "text"
+    },
+    {
+      id: "custom_status",
+      header: "Custom Status",
+      accessorKey: "custom_status",
+      className: "w-[150px]",
+      sortable: true,
+      filterable: true,
+      type: "text"
     }
   ],
   search: {

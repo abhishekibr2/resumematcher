@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { connectToDatabase } from '@/lib/mongodb';
-import { Resume } from '@/models/resume';
 
 
 export async function POST(req: NextRequest) {
