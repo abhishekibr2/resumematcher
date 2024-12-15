@@ -177,18 +177,18 @@ export async function POST(req: NextRequest) {
                 text: `Extract data from this resume and return a detailed JSON in the following format:
 ${JSON.stringify(resumeJson, null, 2)}
 
-Job Post Context: ${promptText || "No specific job post details provided"}
-
 Guidelines:
 1. Ensure all fields are populated with appropriate data and no other fields are present.
 2. Use empty arrays or null if no data is found
 3. Be as precise and comprehensive as possible
 4. Focus on extracting professional and educational details
 5. Only return the JSON and nothing else.
-6. If the resume is not eligible for the job post then return false in should_contact field.
+6. Be honest with the rating without any discrimination , if the candidate is not ready for the job post then give him a low rating and vice versa ( also with the should_contact field).
 7. All the dates should be in dd/mm/yyyy format.
-`
-            }
+8. Additional guidlines:
+9. Rating from 1 to 10. 1 being the lowest and 10 being the highest.
+${promptText || "none"}
+`            }
         ];
 
         // Generate content

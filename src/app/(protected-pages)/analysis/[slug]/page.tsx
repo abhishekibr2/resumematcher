@@ -73,7 +73,7 @@ export default function AnalysisPage() {
                 </CardHeader>
                 <CardContent>
                     {analysisResult ? (
-                        <div className="prose max-w-full">
+                        <div className="prose max-w-full space-y-4">
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                             >

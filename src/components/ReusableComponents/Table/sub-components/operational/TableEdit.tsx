@@ -70,9 +70,9 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
             if (column.accessorKey.includes('.')) {
                 const parts = column.accessorKey.split('.');
                 const value = getNestedValue(data, column.accessorKey);
-                setNestedValue(initialData, column.accessorKey, value);
+                setNestedValue(initialData, column.accessorKey, value ?? '');
             } else {
-                initialData[column.accessorKey] = data[column.accessorKey];
+                initialData[column.accessorKey] = data[column.accessorKey] ?? '';
             }
         });
         return initialData;
@@ -265,7 +265,7 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
                         <Input
                             {...commonProps}
                             type={column.type === 'email' ? 'email' : column.type === 'phone' ? 'tel' : 'text'}
-                            value={formData[column.accessorKey]}
+                            value={formData[column.accessorKey] ?? ''}
                             onChange={(e) => setFormData(prev => ({ ...prev, [column.accessorKey]: e.target.value }))}
                         />
                     </div>

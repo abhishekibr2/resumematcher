@@ -63,6 +63,10 @@ const resumeSchema = new mongoose.Schema({
     Expertise: String,
     Rating: Number,
     should_contact: Boolean
+  },
+  checked: {
+    type: Boolean,
+    default: false
   }
 },
   {
