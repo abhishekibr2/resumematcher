@@ -22,14 +22,6 @@ export async function POST(req: Request) {
 
     // Find user by email
     const user = await User.findOne({ email });
-
-    if( user?.authenticationType !== 'credentials' ) {
-      return NextResponse.json(
-        { message: "You cannot reset your password as you logged in using Google" },
-        { status: 400 }
-      );
-    }
-
     if (!user) {
       // Don't reveal whether a user exists or not
       return NextResponse.json(

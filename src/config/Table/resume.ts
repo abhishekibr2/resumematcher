@@ -22,6 +22,7 @@ interface ResumeData {
     Rating?: number;
     should_contact?: boolean;
   };
+  checked?: boolean;
 }
 
 const commonApi = "table/resume"
@@ -125,6 +126,15 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
       sortable: true,
       filterable: true,
       type: "text"
+    },
+    {
+      id: "checked",
+      header: "Checked",
+      accessorKey: "checked",
+      className: "w-[150px]",
+      sortable: true,
+      filterable: true,
+      type: "boolean"
     }
   ],
   search: {

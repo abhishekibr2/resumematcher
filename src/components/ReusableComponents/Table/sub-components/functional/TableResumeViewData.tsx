@@ -13,7 +13,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { TableColumn } from "@/types/table.types"
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { Input } from "@/components/ui/input"
 import { Form, FormField } from "@/components/ui/form"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -30,30 +30,32 @@ interface TableViewDataProps {
 
 export function TableResumeViewData({ isOpen, onClose, data, columns }: TableViewDataProps) {
 
-    // const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
-    // const [post, setPost] = useState('');
-    // const [yearsOfExperience, setYearsOfExperience] = useState('');
-    // const [isLoading, setIsLoading] = useState(false);
-    // const [analysisResult, setAnalysisResult] = useState<string | null>(null);
-    // const router = useRouter();
+    const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
+    const [post, setPost] = useState('');
+    const [yearsOfExperience, setYearsOfExperience] = useState('');
+    const [isPending, startTransition] = useTransition();
+    const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+    const router = useRouter();
 
-    // const performAnalysis = () => {
-    //     setIsAnalysisOpen(true);
-    //     setAnalysisResult(null);
-    // }
+    const performAnalysis = () => {
+        setIsAnalysisOpen(true);
+        setAnalysisResult(null);
+    }
 
-    // const handleSubmit = async (e: React.FormEvent) => {
-    //     e.preventDefault();
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
 
-    //     // Generate a unique slug
-    //     const slug = nanoid()
+        // Generate a unique slug
+        const slug = nanoid()
 
-    //     // Encode the data to pass in URL
-    //     const encodedData = encodeURIComponent(JSON.stringify(data))
+        // Encode the data to pass in URL
+        const encodedData = encodeURIComponent(JSON.stringify(data))
 
-    //     // Navigate to the analysis page with query parameters
-    //     router.push(`/analysis/${slug}?jobPost=${encodeURIComponent(post)}&yearsOfExperience=${yearsOfExperience}&data=${encodedData}`)
-    // }
+        // Use startTransition to handle the navigation
+        startTransition(() => {
+            router.push(`/analysis/${slug}?jobPost=${encodeURIComponent(post)}&yearsOfExperience=${yearsOfExperience}&data=${encodedData}`)
+        })
+    }
 
     const formatValue = (value: any, column: TableColumn): string => {
         if (value === null || value === undefined) {
@@ -139,7 +141,7 @@ export function TableResumeViewData({ isOpen, onClose, data, columns }: TableVie
                         );
                     })}
                 </div>
-                {/* <div className="mt-4">
+                <div className="mt-4">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Post</label>
@@ -160,13 +162,13 @@ export function TableResumeViewData({ isOpen, onClose, data, columns }: TableVie
                             />
                         </div>
                         <div className="flex justify-end">
-                            <Button type="submit" variant="outline">
-                                <svg fill="none" className="w-10" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M16 8.016A8.522 8.522 0 008.016 16h-.032A8.521 8.521 0 000 8.016v-.032A8.521 8.521 0 007.984 0h.032A8.522 8.522 0 0016 7.984v.032z" fill="url(#prefix__paint0_radial_980_20147)" /><defs><radialGradient id="prefix__paint0_radial_980_20147" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="matrix(16.1326 5.4553 -43.70045 129.2322 1.588 6.503)"><stop offset=".067" stopColor="#9168C0" /><stop offset=".343" stopColor="#5684D1" /><stop offset=".672" stopColor="#1BA1E3" /></radialGradient></defs></svg>
+                            <Button type="submit" disabled={isPending} variant="outline">
+                                {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <svg fill="none" className="w-10" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M16 8.016A8.522 8.522 0 008.016 16h-.032A8.521 8.521 0 000 8.016v-.032A8.521 8.521 0 007.984 0h.032A8.522 8.522 0 0016 7.984v.032z" fill="url(#prefix__paint0_radial_980_20147)" /><defs><radialGradient id="prefix__paint0_radial_980_20147" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="matrix(16.1326 5.4553 -43.70045 129.2322 1.588 6.503)"><stop offset=".067" stopColor="#9168C0" /><stop offset=".343" stopColor="#5684D1" /><stop offset=".672" stopColor="#1BA1E3" /></radialGradient></defs></svg>}
                                 Open Analysis Page
                             </Button>
                         </div>
                     </form>
-                </div> */}
+                </div>
             </DialogContent>
         </Dialog>
     )
