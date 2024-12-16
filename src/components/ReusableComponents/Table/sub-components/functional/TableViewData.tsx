@@ -83,15 +83,15 @@ export function TableViewData({ isOpen, onClose, data, columns }: TableViewDataP
                 <DialogHeader>
                     <DialogTitle>View Details</DialogTitle>
                 </DialogHeader>
-                <ScrollArea className="h-full max-h-[60vh] w-full rounded-md border p-4 ">
+                <ScrollArea className="h-full max-h-[60vh] w-full rounded-md border p-4">
                     <div className="space-y-4">
-                        {columns.map((column) => {
+                        {columns.map((column, index) => {
                             const value = column.accessorKey.includes('.')
                                 ? column.accessorKey.split('.').reduce((obj: any, key: string) => obj?.[key], data)
                                 : data[column.accessorKey];
 
                             return (
-                                <div key={column.accessorKey} className="grid grid-cols-[100px,1fr] gap-4 items-start">
+                                <div key={`${column.accessorKey}-${index}`} className="grid grid-cols-[100px,1fr] gap-4 items-start">
                                     <label className="text-sm font-medium text-gray-500">
                                         {column.header}
                                     </label>
@@ -105,5 +105,5 @@ export function TableViewData({ isOpen, onClose, data, columns }: TableViewDataP
                 </ScrollArea>
             </DialogContent>
         </Dialog>
-    )
+    );
 }

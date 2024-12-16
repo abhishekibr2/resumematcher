@@ -24,6 +24,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TableColumn, TableConfig } from "@/types/table.types";
 import { filterOptions } from "../../data/filterOptions";
+import { useSession } from "next-auth/react";
 
 interface TableAddProps {
     config: TableConfig;
@@ -32,6 +33,8 @@ interface TableAddProps {
 
 type FormDataType = {
     [key: string]: any;
+    createdBy?: string;
+    updatedBy?: string;
 };
 
 interface ArrayFieldValue {
@@ -40,6 +43,7 @@ interface ArrayFieldValue {
 }
 
 export function TableAdd({ config, onSuccess }: TableAddProps) {
+    const { data: session } = useSession();
     const [isOpen, setIsOpen] = useState(false);
     const [formData, setFormData] = useState<FormDataType>(() => {
         const initialData: FormDataType = {};
@@ -178,6 +182,15 @@ export function TableAdd({ config, onSuccess }: TableAddProps) {
             ...cleanArrayFields
         };
 
+        config.columns.forEach(column => {
+            if (column.accessorKey === 'createdBy' && session?.user) {
+                submitData.createdBy = session.user.name || '';
+            }
+            if (column.accessorKey === 'updatedBy' && session?.user) {
+                submitData.updatedBy = session.user.name || '';
+            }
+        });
+
         try {
             const response = await fetch(`/api/${config.endpoints.create}`, {
                 method: "POST",
@@ -270,7 +283,7 @@ export function TableAdd({ config, onSuccess }: TableAddProps) {
     };
 
     const renderField = (column: TableColumn) => {
-        if (column.accessorKey === 'createdAt') {
+        if (['createdAt', 'updatedAt', 'createdBy', 'updatedBy'].includes(column.accessorKey)) {
             return null;
         }
 
@@ -441,7 +454,7 @@ export function TableAdd({ config, onSuccess }: TableAddProps) {
                             {column.header}
                         </Label>
                         <Select
-                            value={formData[column.accessorKey] ?? column.options?.[0]?.value ?? ''}
+                            value={String(formData[column.accessorKey] ?? column.options?.[0]?.value ?? '')}
                             onValueChange={(value) =>
                                 setFormData((prev) => ({ ...prev, [column.accessorKey]: value }))
                             }
@@ -451,7 +464,7 @@ export function TableAdd({ config, onSuccess }: TableAddProps) {
                             </SelectTrigger>
                             <SelectContent>
                                 {column.options?.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
+                                    <SelectItem key={String(option.value)} value={String(option.value)}>
                                         {option.label}
                                     </SelectItem>
                                 ))}
@@ -573,19 +586,19 @@ export function TableAdd({ config, onSuccess }: TableAddProps) {
                     Add {config.title || "User"}
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-[800px]">
+            <DialogContent className="max-w-[800px] max-h-[90vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle className="text-lg font-semibold">
                         Add New {config.title || "User"}
                     </DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit}>
-                    <ScrollArea className="h-[450px] pr-4">
+                <form onSubmit={handleSubmit} className="flex flex-col flex-1">
+                    <ScrollArea className="flex-1 pr-4">
                         <div className="grid grid-cols-2 gap-4 py-4">
                             {config.columns.map(renderField)}
                         </div>
                     </ScrollArea>
-                    <DialogFooter>
+                    <DialogFooter className="mt-4">
                         <Button
                             type="submit"
                             className="w-full"

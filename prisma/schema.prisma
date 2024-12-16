@@ -1,0 +1,13 @@
+model Filter {
+    id        String   @id @default(cuid())
+    name      String
+    filters   Json
+    sorting   Json
+    tableName String
+    createdBy String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([createdBy])
+    @@index([tableName])
+} 

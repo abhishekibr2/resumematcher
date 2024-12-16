@@ -4,22 +4,22 @@ import { Button } from "@/components/ui/button"
 import {
     Dialog,
     DialogContent,
-    DialogFooter,
-    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { TableColumn } from "@/types/table.types"
-import { useState, useTransition } from "react"
-import { Input } from "@/components/ui/input"
-import { Form, FormField } from "@/components/ui/form"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useState, useTransition, useEffect } from "react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2 } from "lucide-react";
 import { nanoid } from 'nanoid'
 import { useRouter } from "next/navigation";
+
+interface Post {
+    _id: string;
+    title: string;
+    post: string;
+}
 
 interface TableViewDataProps {
     isOpen: boolean
@@ -29,33 +29,43 @@ interface TableViewDataProps {
 }
 
 export function TableResumeViewData({ isOpen, onClose, data, columns }: TableViewDataProps) {
-
-    const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
-    const [post, setPost] = useState('');
-    const [yearsOfExperience, setYearsOfExperience] = useState('');
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [selectedPost, setSelectedPost] = useState('');
     const [isPending, startTransition] = useTransition();
-    const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
 
-    const performAnalysis = () => {
-        setIsAnalysisOpen(true);
-        setAnalysisResult(null);
-    }
+    useEffect(() => {
+        const fetchPosts = async () => {
+            try {
+                const response = await fetch('/api/posts');
+                if (response.ok) {
+                    const data = await response.json();
+                    setPosts(data);
+                }
+            } catch (error) {
+                console.error('Error fetching posts:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchPosts();
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Generate a unique slug
-        const slug = nanoid()
+        const selectedPostData = posts.find(p => p._id === selectedPost);
+        if (!selectedPostData) return;
 
-        // Encode the data to pass in URL
-        const encodedData = encodeURIComponent(JSON.stringify(data))
+        const slug = nanoid();
+        const encodedData = encodeURIComponent(JSON.stringify(data));
 
-        // Use startTransition to handle the navigation
         startTransition(() => {
-            router.push(`/analysis/${slug}?jobPost=${encodeURIComponent(post)}&yearsOfExperience=${yearsOfExperience}&data=${encodedData}`)
-        })
-    }
+            router.push(`/analysis/${slug}?jobPost=${encodeURIComponent(selectedPostData.post)}&data=${encodedData}`);
+        });
+    };
 
     const formatValue = (value: any, column: TableColumn): string => {
         if (value === null || value === undefined) {
@@ -144,26 +154,46 @@ export function TableResumeViewData({ isOpen, onClose, data, columns }: TableVie
                 <div className="mt-4">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Post</label>
-                            <Input
-                                type="text"
-                                value={post}
-                                onChange={(e) => setPost(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Years of Experience</label>
-                            <Input
-                                type="number"
-                                value={yearsOfExperience}
-                                onChange={(e) => setYearsOfExperience(e.target.value)}
-                                required
-                            />
+                            <label className="block text-sm font-medium text-gray-700">Select Job Post</label>
+                            {isLoading ? (
+                                <div className="flex items-center justify-center p-2">
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                </div>
+                            ) : (
+                                <Select value={selectedPost} onValueChange={setSelectedPost}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a job post" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {posts.map((post) => (
+                                            <SelectItem key={post._id} value={post._id}>
+                                                {post.title}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
                         </div>
                         <div className="flex justify-end">
-                            <Button type="submit" disabled={isPending} variant="outline">
-                                {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <svg fill="none" className="w-10" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M16 8.016A8.522 8.522 0 008.016 16h-.032A8.521 8.521 0 000 8.016v-.032A8.521 8.521 0 007.984 0h.032A8.522 8.522 0 0016 7.984v.032z" fill="url(#prefix__paint0_radial_980_20147)" /><defs><radialGradient id="prefix__paint0_radial_980_20147" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="matrix(16.1326 5.4553 -43.70045 129.2322 1.588 6.503)"><stop offset=".067" stopColor="#9168C0" /><stop offset=".343" stopColor="#5684D1" /><stop offset=".672" stopColor="#1BA1E3" /></radialGradient></defs></svg>}
+                            <Button 
+                                type="submit" 
+                                disabled={isPending || !selectedPost} 
+                                variant="outline"
+                            >
+                                {isPending ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <svg fill="none" className="w-10" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+                                        <path d="M16 8.016A8.522 8.522 0 008.016 16h-.032A8.521 8.521 0 000 8.016v-.032A8.521 8.521 0 007.984 0h.032A8.522 8.522 0 0016 7.984v.032z" fill="url(#prefix__paint0_radial_980_20147)" />
+                                        <defs>
+                                            <radialGradient id="prefix__paint0_radial_980_20147" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="matrix(16.1326 5.4553 -43.70045 129.2322 1.588 6.503)">
+                                                <stop offset=".067" stopColor="#9168C0" />
+                                                <stop offset=".343" stopColor="#5684D1" />
+                                                <stop offset=".672" stopColor="#1BA1E3" />
+                                            </radialGradient>
+                                        </defs>
+                                    </svg>
+                                )}
                                 Open Analysis Page
                             </Button>
                         </div>
@@ -171,5 +201,5 @@ export function TableResumeViewData({ isOpen, onClose, data, columns }: TableVie
                 </div>
             </DialogContent>
         </Dialog>
-    )
+    );
 }

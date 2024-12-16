@@ -32,6 +32,7 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account }) {
+      console.log(user)
       if (account?.provider === "google") {
         try {
           await connectToDatabase();
@@ -41,7 +42,6 @@ export const authOptions: NextAuthOptions = {
               name: user.name,
               email: user.email,
               password: Math.random().toString(36).slice(-8),
-              id: user.id,
               role: "user",
             });
           }
@@ -60,6 +60,7 @@ export const authOptions: NextAuthOptions = {
         session.user = {
           ...session.user,
           role: token.user.role,
+          _id: token.user._id,
         };
       }
       return session;
@@ -69,6 +70,7 @@ export const authOptions: NextAuthOptions = {
         token.user = {
           ...user,
           role: user.role,
+          _id: user._id,
         };
       }
       return token;

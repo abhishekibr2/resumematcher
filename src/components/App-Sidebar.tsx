@@ -37,7 +37,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         },
         teams: [
             {
-                name: "ABC Company",
+                name: "IBR Infotech",
                 logo: GalleryVerticalEnd,
                 plan: "Enterprise",
             },
@@ -60,13 +60,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 ],
             },
             {
-                title: "Prompts",
+                title: "Posts",
                 url: "/",
                 icon: Languages,
                 items: [
                     {
-                        title: "Saved Prompts",
-                        url: "/all-prompts",
+                        title: "Saved Posts",
+                        url: "/all-posts",
                     },
                 ],
             },

@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
         // Parse form data
         const formData = await req.formData();
         const file = formData.get('file') as File;
-        const promptText = formData.get('promptText') as string;
+        const postText = formData.get('postText') as string;
         const status = formData.get('status') as string;
 
         // Validate file
@@ -128,8 +128,8 @@ export async function POST(req: NextRequest) {
             },
         ];
 
-        // Prepare the prompt
-        const promptParts = [
+        // Prepare the post
+        const postParts = [
             {
                 fileData: {
                     mimeType: uploadedFile.mimeType,
@@ -148,13 +148,13 @@ Guidelines:
 5. Return only the JSON
 6. Rating from 1 to 10 (1 lowest, 10 highest)
 7. Dates in dd/mm/yyyy format
-${promptText || ""}`
+${postText || ""}`
             }
         ];
 
         // Generate content
         const result = await model.generateContent({
-            contents: [{ role: "user", parts: promptParts }],
+            contents: [{ role: "user", parts: postParts }],
             generationConfig,
             safetySettings,
         });

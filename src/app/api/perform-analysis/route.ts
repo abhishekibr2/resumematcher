@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(req: NextRequest) {
     try {
-        const { data, jobPost, yearsOfExperience } = await req.json();
+        const { data, jobPost } = await req.json();
         // console.log({data},{jobPost},{yearsOfExperience})
 
         // Validate API key
@@ -26,8 +26,7 @@ export async function POST(req: NextRequest) {
                         "text": `Please provide an honest and concise analysis of this resume based on the following criteria:
                         
                         1. Job Post: ${JSON.stringify(jobPost)}
-                        2. Years of Experience: ${JSON.stringify(yearsOfExperience)}
-                        3. Resume: ${JSON.stringify(data)}
+                        2. Resume: ${JSON.stringify(data)}
                         
                         Guidelines:
                         - Evaluate how well the candidate's experience, skills, and qualifications align with the job post requirements. 

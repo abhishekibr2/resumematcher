@@ -116,10 +116,10 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
                 if (sort && order) {
                     sortOptions[sort] = order === 'asc' ? 1 : -1
                     // Always include createdAt as a secondary sort
-                    sortOptions.createdAt = -1
+                    sortOptions.updatedAt = -1
                 } else {
                     // Default sort by createdAt desc
-                    sortOptions.createdAt = -1
+                    sortOptions.updatedAt = -1
                 }
 
                 // Build search query

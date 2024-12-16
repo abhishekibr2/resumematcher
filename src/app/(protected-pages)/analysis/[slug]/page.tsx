@@ -22,13 +22,28 @@ export default function AnalysisPage() {
                 const yearsOfExperience = searchParams.get('yearsOfExperience')
                 const encodedData = searchParams.get('data')
 
-                if (!jobPost || !yearsOfExperience || !encodedData) {
+                if (!jobPost || !encodedData) {
                     throw new Error('Missing required parameters')
                 }
 
-                // Decode the data
-                const data = JSON.parse(decodeURIComponent(encodedData))
+                const data = (() => {
+                    try {
+                        return JSON.parse(decodeURIComponent(encodedData));
+                    } catch (decodeError) {
+                        console.error('Decoding error:', decodeError);
+                        // Fallback: try decoding without decodeURIComponent
+                        try {
+                            return JSON.parse(encodedData);
+                        } catch (parseError) {
+                            console.error('Parsing error:', parseError);
+                            return null;
+                        }
+                    }
+                })();
 
+                if (!data) {
+                    throw new Error('Could not parse encoded data');
+                }
                 const response = await fetch('/api/perform-analysis', {
                     method: 'POST',
                     headers: {
