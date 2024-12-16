@@ -1,37 +1,20 @@
 "use client"
 import { TableConfig } from "../../types/table.types";
 
-interface ResumeData {
-  fullName: string;
-  contact: {
-    email?: string;
-    phone?: string;
-    linkedin?: string;
-    address?: {
-      street?: string;
-      city?: string;
-      state?: string;
-      zip?: string;
-      country?: string;
-    };
-  };
-  status?: string;
-  summary?: string;
-  skills?: string[];
-  stats?: {
-    Expertise?: string;
-    Rating?: number;
-    should_contact?: boolean;
-  };
-  checked?: boolean;
+interface UserData {
+  name: string;
+  email: string;
+  role: string;
+  resetToken?: string;
+  resetTokenExpiry?: Date;
 }
 
-const commonApi = "table/resume"
+const commonApi = "table/users"
 
-export const resumeTableConfig: TableConfig<ResumeData> = {
-  id: "resume-table",
-  title: "Resumes",
-  description: "List of all submitted resumes",
+export const userTableConfig: TableConfig<UserData> = {
+  id: "user-table",
+  title: "Users",
+  description: "List of all registered users",
   endpoints: {
     getAll: `${commonApi}`,
     create: `${commonApi}`,
@@ -58,9 +41,9 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
   },
   columns: [
     {
-      id: "fullName",
-      header: "Full Name",
-      accessorKey: "fullName",
+      id: "name",
+      header: "Name",
+      accessorKey: "name",
       className: "w-[200px] text-gray-900 font-semibold",
       sortable: true,
       filterable: true,
@@ -70,74 +53,39 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
     {
       id: "email",
       header: "Email",
-      accessorKey: "contact.email",
+      accessorKey: "email",
       className: "min-w-[250px] text-blue-600 hover:text-blue-800",
       sortable: true,
       filterable: true,
       type: "email"
     },
     {
-      id: "phone",
-      header: "Phone",
-      accessorKey: "contact.phone",
-      className: "w-[150px]",
-      sortable: true,
-      type: "phone"
-    },
-    {
-      id: "expertise",
-      header: "Expertise",
-      accessorKey: "stats.Expertise",
+      id: "password",
+      header: "Password",
+      accessorKey: "password",
       className: "w-[150px]",
       sortable: true,
       filterable: true,
       type: "text"
     },
     {
-      id: "rating",
-      header: "Rating",
-      accessorKey: "stats.Rating",
-      className: "w-[100px]",
-      sortable: true,
-      type: "number"
-    },
-    {
-      id: "shouldContact",
-      header: "Should Contact",
-      accessorKey: "stats.should_contact",
-      className: "w-[120px]",
+      id: "role",
+      header: "Role",
+      accessorKey: "role",
+      className: "w-[150px]",
       sortable: true,
       filterable: true,
       type: "select",
       options: [
-        { label: "Yes", value: "true" },
-        { label: "No", value: "false" }
+        { label: "Admin", value: "admin" },
+        { label: "User", value: "user" },
       ]
     },
-    {
-      id: "city",
-      header: "City",
-      accessorKey: "contact.address.city",
-      className: "w-[150px]",
-      sortable: true,
-      filterable: true,
-      type: "text"
-    },
-    {
-      id: "status",
-      header: "Status",
-      accessorKey: "status",
-      className: "w-[150px]",
-      sortable: true,
-      filterable: true,
-      type: "select",
-      options: []
-    }
   ],
   search: {
     enabled: true,
-    placeholder: "Search resumes...",
-    searchableColumns: ["fullName", "contact.email", "contact.phone", "status"]
+    placeholder: "Search users...",
+    searchableColumns: ["name", "email", "role"]
   },
   pagination: {
     enabled: true,
@@ -158,19 +106,20 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
     defaultVisible: true
   },
   export: {
-    enabled: false,
+    enabled: true,
     formats: ['csv', 'excel', 'pdf'],
-    filename: 'resumes-export'
+    filename: 'users-export'
   },
   import: {
-    enabled: false,
+    enabled: true,
     formats: ['csv'],
-    template: '/templates/resumes-import-template.csv'
+    template: '/templates/users-import-template.csv'
   },
   select: {
     enabled: true,
     type: 'multiple',
     onSelect: (selectedRows) => {
+      console.log('Selected rows:', selectedRows)
     }
   },
   edit: {
@@ -178,7 +127,7 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
     allowDelete: true,
     allowUpdate: true,
     confirmDelete: true,
-    allowAdd: false,
+    allowAdd: true,
     style: {
       column: "w-[50px]",
       editButton: "hover:text-blue-600",
@@ -187,61 +136,50 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
     messages: {
       deleteConfirm: {
         title: "Are you sure?",
-        description: "This action cannot be undone. This will permanently delete the resume and remove their data from our servers.",
+        description: "This action cannot be undone. This will permanently delete the user and remove their data from our servers.",
         confirm: "Delete",
         cancel: "Cancel"
       },
       success: {
-        update: "Resume has been updated successfully",
-        delete: "Resume has been deleted successfully"
+        update: "User has been updated successfully",
+        delete: "User has been deleted successfully"
       },
       error: {
-        update: "Failed to update resume",
-        delete: "Failed to delete resume"
+        update: "Failed to update user",
+        delete: "Failed to delete user"
       },
       loading: {
-        update: "Updating resume...",
-        delete: "Deleting resume..."
+        update: "Updating user...",
+        delete: "Deleting user..."
       }
     }
   },
   bulkEdit: {
+
     enabled: true,
     allowDelete: true,
     fields: [
       {
-        name: 'stats.Expertise',
-        label: 'Expertise',
+        name: 'role',
+        label: 'Role',
         type: 'select',
         options: [
-          { label: 'Junior', value: 'junior' },
-          { label: 'Mid-Level', value: 'mid-level' },
-          { label: 'Senior', value: 'senior' },
-          { label: 'Expert', value: 'expert' }
+          { label: 'User', value: 'user' },
+          { label: 'Admin', value: 'admin' },
         ]
       },
       {
-        name: 'stats.Rating',
-        label: 'Rating',
-        type: 'number',
-      },
-      {
-        name: 'stats.should_contact',
-        label: 'Should Contact',
-        type: 'checkbox'
-      },
-      {
-        name: 'stats.email',
+        name: 'email',
         label: 'Email',
         type: 'email',
         placeholder: 'Enter email'
       },
       {
-        name: 'status',
-        label: 'Status',
-        type: 'select',
-        options: []
+        name: 'password',
+        label: 'Password',
+        type: 'password',
+        placeholder: 'Enter password'
       }
     ]
-  }
+  },
 };

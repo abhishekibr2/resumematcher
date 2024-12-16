@@ -10,7 +10,7 @@ import {
 import { TableProps, SortingState, PaginationState, FilterValue } from "@/types/table.types"
 import { fetchTableData } from "@/lib/utils"
 import { useState, useEffect, useRef } from "react"
-import { ChevronUp, ChevronDown } from "lucide-react"
+import { ChevronUp, ChevronDown, PlusIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TableSearch } from "./sub-components/functional/TableSearch"
 import { TablePagination } from "./sub-components/functional/TablePagination"
@@ -29,6 +29,21 @@ import { ratingStyles } from "./data/rating"
 import { TableResumeViewData } from "./sub-components/functional/TableResumeViewData"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
+import { TableAddStatusData } from "./sub-components/operational/TableAddStatusData"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "@/components/ui/select"
+
+// Define a type for the status data
+interface StatusData {
+    _id: string;
+    status: string;
+    createdBy: string;
+}
 
 export function TableComponent({ config }: TableProps) {
     const router = useRouter();
@@ -60,6 +75,48 @@ export function TableComponent({ config }: TableProps) {
     const [isViewDataOpen, setIsViewDataOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
 
+    // New state for status filter
+    const [statusOptions, setStatusOptions] = useState<StatusData[]>([])
+    const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
+
+    // Fetch status options on component mount
+    useEffect(() => {
+        const fetchStatusOptions = async () => {
+            try {
+                const response = await fetch('/api/status')
+                const data = await response.json()
+                setStatusOptions(data)
+            } catch (error) {
+                console.error('Failed to fetch status options', error)
+                toast({
+                    title: "Error",
+                    description: "Failed to load status options",
+                    variant: "destructive"
+                })
+            }
+        }
+
+        fetchStatusOptions()
+    }, [])
+
+    // Update filters when status changes
+    useEffect(() => {
+        // Remove existing status filter if any
+        const filteredFilters = filters.filter(f => f.column !== 'status')
+
+        // Add new status filter if a status is selected
+        if (selectedStatus !== "all_statuses") {
+            const statusFilter: FilterValue = {
+                column: 'status',
+                operator: 'equals',
+                value: selectedStatus || ""
+            }
+            setFilters([...filteredFilters, statusFilter])
+        } else {
+            setFilters(filteredFilters)
+        }
+    }, [selectedStatus])
+
     const loadTableData = async (sortParams = '', searchParams = '') => {
         if (initialLoading) {
             setInitialLoading(true)
@@ -67,7 +124,6 @@ export function TableComponent({ config }: TableProps) {
             setOperationLoading(true)
         }
         try {
-
             const paginationParams = config.pagination?.enabled
                 ? `${sortParams || searchParams ? '&' : '?'}page=${pagination.pageIndex + 1}&pageSize=${pagination.pageSize}`
                 : ''
@@ -79,7 +135,6 @@ export function TableComponent({ config }: TableProps) {
             const response = await fetchTableData(
                 `${config.endpoints.getAll}${sortParams}${searchParams}${paginationParams}${filterParams}`
             )
-            console.log(response.data.items)
             setData(response.data.items)
             setPagination(prev => ({
                 ...prev,
@@ -218,7 +273,7 @@ export function TableComponent({ config }: TableProps) {
             return actualValue.map((skill: any) => skill.name).join(', ');
         }
 
-        if (accessorKey === 'status.Rating') {
+        if (accessorKey === 'stats.Rating') {
             const rating = String(actualValue).toLowerCase();
             return (
                 <span className={`${ratingStyles[rating] || "text-primary"}`}>
@@ -349,10 +404,17 @@ export function TableComponent({ config }: TableProps) {
                         />
                     )}
                     {config.edit?.allowAdd && (
-                        <TableAdd
-                            config={config}
-                            onSuccess={() => loadTableData()}
-                        />
+                        config.title?.toLowerCase() === 'status' ? (
+                            <TableAddStatusData
+                                config={config}
+                                onSuccess={() => loadTableData()}
+                            />
+                        ) : (
+                            <TableAdd
+                                config={config}
+                                onSuccess={() => loadTableData()}
+                            />
+                        )
                     )}
                     {config.title?.toLowerCase() === 'resumes' && (
                         <Button variant="outline" onClick={() => router.push("/upload-resume")}>
@@ -365,6 +427,25 @@ export function TableComponent({ config }: TableProps) {
                             columns={config.columns}
                             onFilterChange={setFilters}
                         />
+                    )}
+
+                    {config.title?.toLowerCase() === 'resumes' && statusOptions.length > 0 && (
+                        <Select
+                            value={selectedStatus || undefined}
+                            onValueChange={(value) => setSelectedStatus(value || null)}
+                        >
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Filter by Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={"all_statuses"}>All Statuses</SelectItem>
+                                {statusOptions.map((statusItem) => (
+                                    <SelectItem key={statusItem._id} value={statusItem.status}>
+                                        {statusItem.status}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     )}
 
                     {config.select?.enabled && getSelectedCount() > 0 && (

@@ -15,7 +15,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Edit2, Trash2 } from "lucide-react"
+import { Download, Edit2, Trash2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { TableConfig } from "@/types/table.types"
@@ -42,10 +42,16 @@ interface TableBulkEditProps {
     onOpenChange: (open: boolean) => void
 }
 
-export function TableBulkEdit({ 
-    config, 
-    selectedData, 
-    onSuccess, 
+type Status = {
+    _id: string;
+    status: string;
+    createdBy: string;
+};
+
+export function TableBulkEdit({
+    config,
+    selectedData,
+    onSuccess,
     onClearSelection,
     isOpen,
     onOpenChange
@@ -55,8 +61,90 @@ export function TableBulkEdit({
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const [deleteTimer, setDeleteTimer] = useState(5)
     const [canDelete, setCanDelete] = useState(false)
+    const [statusLoading, setStatusLoading] = useState(true);
+    const [statusError, setStatusError] = useState<string | null>(null);
+    const [status, setStatus] = useState<Status[]>([]);
+    const [selectedStatus, setSelectedStatus] = useState<string>('');
+    const [loading, setLoading] = useState(false);
     const { toast } = useToast()
     const form = useForm()
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    const fetchResumeFile = async (resumeId: string) => {
+        try {
+            const response = await fetch(`/api/get-resume`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: resumeId }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch resume');
+            }
+
+            // Get the filename from Content-Disposition header
+            const filename = response.headers
+                .get('Content-Disposition')
+                ?.split('filename=')[1]
+                ?.replace(/"/g, '');
+
+            // Convert to blob
+            const blob = await response.blob();
+
+            // Create a link to download the file
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename || 'resume.pdf';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error downloading resume:', error);
+        }
+    };
+
+    const handleDownload = async () => {
+        setIsDownloading(true);
+        try {
+            for (const item of selectedData) {
+                await fetchResumeFile(item._id);
+            }
+        } catch (error) {
+            // Handle error (show toast, etc.)
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    useEffect(() => {
+        async function fetchStatus() {
+            try {
+                setStatusLoading(true);
+                const response = await fetch('/api/status');
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch status');
+                }
+
+                const data = await response.json();
+                const statusArray = Array.isArray(data) ? data : [];
+
+                setStatus(statusArray);
+                setStatusError(statusArray.length === 0 ? 'No status found' : null);
+            } catch (error) {
+                console.error('Error fetching status:', error);
+                setStatusError(error instanceof Error ? error.message : 'An unknown error occurred');
+                setStatus([]);
+            } finally {
+                setStatusLoading(false);
+            }
+        }
+        fetchStatus();
+    }, []);
 
     const selectedField = config.bulkEdit?.fields?.find(
         field => field.name === selectedColumn
@@ -187,26 +275,49 @@ export function TableBulkEdit({
         switch (selectedField.type) {
             case 'select':
                 return (
-                    <Select
-                        value={form.watch('value')}
-                        onValueChange={(value) => form.setValue('value', value)}
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder={selectedField.placeholder || "Select value"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {selectedField.options?.map((option) => (
-                                <SelectItem 
-                                    key={option.value.toString()} 
-                                    value={option.value.toString()}
-                                >
-                                    {option.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <div >
+                        {config.title?.toLowerCase() !== 'resumes' ? (
+                            <Select
+                                value={form.watch('value')}
+                                onValueChange={(value) => form.setValue('value', value)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder={selectedField.placeholder || "Select value"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {selectedField.options?.map((option) => (
+                                        <SelectItem
+                                            key={option.value.toString()}
+                                            value={option.value.toString()}
+                                        >
+                                            {option.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        ) : (
+                            <Select
+                                value={form.watch('value')}
+                                onValueChange={(value) => form.setValue('value', value)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder={selectedField.placeholder || "Select value"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {status.map((option) => (
+                                        <SelectItem
+                                            key={option.status}
+                                            value={option.status}
+                                        >
+                                            {option.status}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+                    </div >
+
                 )
-            
             default:
                 return (
                     <Input
@@ -240,6 +351,17 @@ export function TableBulkEdit({
                     >
                         <Trash2 className="h-4 w-4" />
                         Delete ({selectedData.length})
+                    </Button>
+                )}
+                {config.title?.toLowerCase() === 'resumes' && (
+                    <Button
+                        variant="outline"
+                        className="gap-2"
+                        onClick={handleDownload}
+                        disabled={isDownloading}
+                    >
+                        <Download className="h-4 w-4" />
+                        Download Resume
                     </Button>
                 )}
             </div>
@@ -307,8 +429,8 @@ export function TableBulkEdit({
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {config.bulkEdit?.fields?.map(field => (
-                                                        <SelectItem 
-                                                            key={field.name} 
+                                                        <SelectItem
+                                                            key={field.name}
                                                             value={field.name}
                                                         >
                                                             {field.label}

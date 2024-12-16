@@ -53,21 +53,18 @@ const resumeSchema = new mongoose.Schema({
   contact: contactSchema,
   summary: String,
   skills: [String],
-  custom_status: String,
+  status: { type: String, default: "applied" },
   workExperience: [workExperienceSchema],
   education: [educationSchema],
   certifications: [certificationSchema],
   projects: [projectSchema],
   languages: [languageSchema],
-  status: {
+  stats: {
     Expertise: String,
     Rating: Number,
     should_contact: Boolean
   },
-  checked: {
-    type: Boolean,
-    default: false
-  }
+  resumeFilePath: { type: String, required: true },
 },
   {
     timestamps: true

@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TableColumn, TableConfig } from "@/types/table.types";
-import { filterOptions } from "../../data/filterOptions";
+import { useSession } from "next-auth/react";
 
 interface TableAddProps {
     config: TableConfig;
@@ -39,8 +39,9 @@ interface ArrayFieldValue {
     value: any;
 }
 
-export function TableAdd({ config, onSuccess }: TableAddProps) {
+export function TableAddStatusData({ config, onSuccess }: TableAddProps) {
     const [isOpen, setIsOpen] = useState(false);
+    const { data: session } = useSession();
     const [formData, setFormData] = useState<FormDataType>(() => {
         const initialData: FormDataType = {};
         config.columns.forEach((column) => {
@@ -173,11 +174,11 @@ export function TableAdd({ config, onSuccess }: TableAddProps) {
             }))
         }), {});
 
-        const submitData = {
+        const submitData: FormDataType = {
             ...formData,
             ...cleanArrayFields
         };
-
+        submitData.createdBy = session?.user?.name || "";
         try {
             const response = await fetch(`/api/${config.endpoints.create}`, {
                 method: "POST",
@@ -582,7 +583,12 @@ export function TableAdd({ config, onSuccess }: TableAddProps) {
                 <form onSubmit={handleSubmit}>
                     <ScrollArea className="h-[450px] pr-4">
                         <div className="grid grid-cols-2 gap-4 py-4">
-                            {config.columns.map(renderField)}
+                            {config.columns.map(column => {
+                                if (column.accessorKey === 'createdBy') {
+                                    return null;
+                                }
+                                return renderField(column);
+                            })}
                         </div>
                     </ScrollArea>
                     <DialogFooter>

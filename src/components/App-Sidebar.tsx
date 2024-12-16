@@ -2,9 +2,13 @@
 
 import * as React from "react"
 import {
+    CircleCheckBig,
+    CircleDollarSign,
+    Dot,
     FileText,
     GalleryVerticalEnd,
     Languages,
+    Settings,
 } from "lucide-react"
 
 
@@ -66,7 +70,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     },
                 ],
             },
-
+            {
+                title: "Status",
+                url: "/",
+                icon: CircleCheckBig,
+                isActive: false,
+                items: [
+                    {
+                        title: "All Status",
+                        url: "/all-status",
+                    },
+                ],
+            },
+            ...((session?.user.role === "admin") ? [{
+                title: "Admin",
+                url: "/admin",
+                icon: Settings,
+                items: [
+                    {
+                        title: "Users",
+                        url: "/users",
+                    },
+                ],
+            }] : [])
         ],
     }
     return (

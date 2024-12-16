@@ -40,11 +40,12 @@ type FormDataType = {
     [key: string]: any;
 }
 
+
 // Move helper functions outside the component
 const setNestedValue = (obj: any, path: string, value: any) => {
     const parts = path.split('.');
     let current = obj;
-    
+
     for (let i = 0; i < parts.length - 1; i++) {
         if (!current[parts[i]]) {
             current[parts[i]] = {};
@@ -79,8 +80,10 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
     });
     const { toast } = useToast()
 
+
+
     useEffect(() => {
-        console.log({config})
+        console.log({ config })
     }, [])
 
     const handleUpdate = async () => {
@@ -285,6 +288,7 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
                 )
 
             case 'select':
+            case 'boolean':
             case 'gender':
                 return (
                     <div className="space-y-1" key={column.id}>
@@ -310,7 +314,8 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
                         </Select>
                     </div>
                 )
-
+            case 'hidden':
+                return null
             case 'address':
                 return (
                     <div className="space-y-4" key={column.id}>

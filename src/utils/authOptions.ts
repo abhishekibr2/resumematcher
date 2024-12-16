@@ -42,6 +42,7 @@ export const authOptions: NextAuthOptions = {
               email: user.email,
               password: Math.random().toString(36).slice(-8),
               id: user.id,
+              role: "user",
             });
           }
         } catch (error) {
@@ -58,6 +59,7 @@ export const authOptions: NextAuthOptions = {
       if (token.user) {
         session.user = {
           ...session.user,
+          role: token.user.role,
         };
       }
       return session;
@@ -66,6 +68,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.user = {
           ...user,
+          role: user.role,
         };
       }
       return token;
