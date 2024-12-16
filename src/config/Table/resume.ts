@@ -99,6 +99,7 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
       accessorKey: "stats.Rating",
       className: "w-[100px]",
       sortable: true,
+      filterable: true,
       type: "number"
     },
     {
@@ -132,6 +133,24 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
       filterable: true,
       type: "select",
       options: []
+    },
+    {
+      id: "updatedAt",
+      header: "Updated At",
+      accessorKey: "updatedAt",
+      className: "w-[150px]",
+      sortable: true,
+      filterable: true,
+      type: "date"
+    },
+    {
+      id: "createdAt",
+      header: "Created At",
+      accessorKey: "createdAt",
+      className: "w-[150px]",
+      sortable: true,
+      filterable: true,
+      type: "date"
     }
   ],
   search: {
@@ -146,12 +165,7 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
   },
   filter: {
     enabled: true,
-    operators: [
-      { label: 'Equals', value: 'equals' },
-      { label: 'Not Equals', value: 'notEquals' },
-      { label: 'Contains', value: 'contains' },
-      { label: 'Not Contains', value: 'notContains' }
-    ]
+    operators: []
   },
   columnToggle: {
     enabled: true,
@@ -231,7 +245,7 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
         type: 'checkbox'
       },
       {
-        name: 'stats.email',
+        name: 'contact.email',
         label: 'Email',
         type: 'email',
         placeholder: 'Enter email'

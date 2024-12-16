@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, FileUp, File, FileX, FileText } from "lucide-react";
 import { toast } from '@/hooks/use-toast';
-// Define Prompt type to match your Mongoose schema
-type Prompt = {
+// Define Post type to match your Mongoose schema
+type Post = {
   _id: string;
   title: string;
-  prompt: string;
+  post: string;
 };
 type Status = {
   _id: string;
@@ -25,14 +25,14 @@ export default function DashboardPage() {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // New state for prompts and selected prompt
-  const [prompts, setPrompts] = useState<Prompt[]>([]);
+  // New state for posts and selected post
+  const [posts, setPosts] = useState<Post[]>([]);
   const [status, setStatus] = useState<Status[]>([]);
-  const [selectedPrompt, setSelectedPrompt] = useState<string>('');
+  const [selectedPost, setSelectedPost] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
-  const [selectedPromptText, setSelectedPromptText] = useState<string>('');
-  const [promptsLoading, setPromptsLoading] = useState(true);
-  const [promptsError, setPromptsError] = useState<string | null>(null);
+  const [selectedPostText, setSelectedPostText] = useState<string>('');
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [postsError, setPostsError] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);
   const [statusError, setStatusError] = useState<string | null>(null);
 
@@ -45,28 +45,28 @@ export default function DashboardPage() {
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
   ];
 
-  // Fetch prompts on component mount
+  // Fetch posts on component mount
   useEffect(() => {
-    async function fetchPrompts() {
+    async function fetchPosts() {
       try {
-        setPromptsLoading(true);
-        const response = await fetch('/api/prompts');
+        setPostsLoading(true);
+        const response = await fetch('/api/posts');
 
         if (!response.ok) {
-          throw new Error('Failed to fetch prompts');
+          throw new Error('Failed to fetch posts');
         }
 
         const data = await response.json();
-        const promptsArray = Array.isArray(data) ? data : [];
+        const postsArray = Array.isArray(data) ? data : [];
 
-        setPrompts(promptsArray);
-        setPromptsError(promptsArray.length === 0 ? 'No prompts found' : null);
+        setPosts(postsArray);
+        setPostsError(postsArray.length === 0 ? 'No posts found' : null);
       } catch (error) {
-        console.error('Error fetching prompts:', error);
-        setPromptsError(error instanceof Error ? error.message : 'An unknown error occurred');
-        setPrompts([]);
+        console.error('Error fetching posts:', error);
+        setPostsError(error instanceof Error ? error.message : 'An unknown error occurred');
+        setPosts([]);
       } finally {
-        setPromptsLoading(false);
+        setPostsLoading(false);
       }
     }
     async function fetchStatus() {
@@ -92,7 +92,7 @@ export default function DashboardPage() {
       }
     }
     fetchStatus();
-    fetchPrompts();
+    fetchPosts();
   }, []);
 
   // Improved file validation
@@ -165,13 +165,13 @@ export default function DashboardPage() {
     }
   };
 
-  const handlePromptChange = (promptId: string) => {
-    // Find the selected prompt
-    const prompt = prompts.find(p => p._id === promptId);
+  const handlePostChange = (postId: string) => {
+    // Find the selected post
+    const post = posts.find(p => p._id === postId);
 
-    // Update selected prompt ID and prompt text
-    setSelectedPrompt(promptId);
-    setSelectedPromptText(prompt ? prompt.prompt : '');
+    // Update selected post ID and post text
+    setSelectedPost(postId);
+    setSelectedPostText(post ? post.post : '');
   };
 
   const handleStatusChange = (statusId: string) => {
@@ -190,9 +190,9 @@ export default function DashboardPage() {
       return;
     }
 
-    if (!selectedPrompt) {
+    if (!selectedPost) {
       toast({
-        title: 'Please select a prompt',
+        title: 'Please select a post',
         variant: 'destructive',
       });
       setLoading(false);
@@ -216,8 +216,8 @@ export default function DashboardPage() {
       for (const [index, file] of selectedFiles.entries()) {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('promptId', selectedPrompt);
-        formData.append('promptText', selectedPromptText);
+        formData.append('postId', selectedPost);
+        formData.append('postText', selectedPostText);
         formData.append('status', status.find((s: Status) => s._id === selectedStatus)?.status || '');
 
         try {
@@ -289,29 +289,29 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid w-full items-center gap-4">
-            {/* Prompt Dropdown */}
+            {/* Post Dropdown */}
             <Select
-              value={selectedPrompt}
-              onValueChange={handlePromptChange}
-              disabled={promptsLoading || prompts.length === 0}
+              value={selectedPost}
+              onValueChange={handlePostChange}
+              disabled={postsLoading || posts.length === 0}
             >
               <SelectTrigger>
                 <SelectValue placeholder={
-                  promptsLoading
-                    ? "Loading prompts..."
-                    : (promptsError || "Select an Analysis Prompt")
+                  postsLoading
+                    ? "Loading posts..."
+                    : (postsError || "Select an Analysis Post")
                 } />
               </SelectTrigger>
               <SelectContent>
-                {prompts.length > 0 ? (
-                  prompts.map((prompt) => (
-                    <SelectItem key={prompt._id} value={prompt._id}>
-                      {prompt.title}
+                {posts.length > 0 ? (
+                  posts.map((post) => (
+                    <SelectItem key={post._id} value={post._id}>
+                      {post.title}
                     </SelectItem>
                   ))
                 ) : (
                   <div className="p-2 text-center text-muted-foreground">
-                    {promptsError || "No prompts available"}
+                    {postsError || "No posts available"}
                   </div>
                 )}
               </SelectContent>
@@ -369,7 +369,7 @@ export default function DashboardPage() {
 
             <Button
               onClick={processFiles}
-              disabled={selectedFiles.length === 0 || !selectedPrompt || loading}
+              disabled={selectedFiles.length === 0 || !selectedPost || loading}
               className="w-full"
             >
               {loading ? (

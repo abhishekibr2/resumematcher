@@ -24,7 +24,7 @@ export interface TableColumn {
   filterable?: boolean;
   defaultVisible?: boolean;
   type?: string;
-  options?: Array<{ label: string; value: string }>;
+  options?: Array<{ label: string; value: string | boolean }>;
   arrayType?: string;
   arrayFields?: {
     [key: string]: {
@@ -64,15 +64,25 @@ export interface PaginationConfig {
   pageSizeOptions: number[];
 }
 
-export interface FilterOperator {
-  label: string;
-  value: 'equals' | 'notEquals' | 'contains' | 'notContains';
-}
+export type FilterOperator = 
+  // Text operators
+  | 'equals' | 'notEquals' | 'contains' | 'notContains' | 'startsWith' | 'endsWith'
+  // Number operators
+  | 'greaterThan' | 'lessThan' | 'greaterThanEqual' | 'lessThanEqual' | 'between'
+  // Date operators
+  | 'before' | 'after' | 'onDate' | 'dateRange'
+  // Array operators
+  | 'in' | 'notIn' | 'hasAll' | 'hasAny'
+  // Select operators
+  | 'is' | 'isNot'
+  // Boolean operators
+  | 'isTrue' | 'isFalse';
 
 export interface FilterValue {
-  column: string;
-  operator: FilterOperator['value'];
-  value: string;
+    column: string;
+    operator: FilterOperator;
+    value: any;
+    secondValue?: any; // For range/between operations
 }
 
 export interface FilterConfig {

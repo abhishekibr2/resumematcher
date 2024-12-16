@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { authOptions } from "@/utils/authOptions";
-import { Prompt } from "@/models/Prmopt";
+import { Post } from "@/models/posts";
 
 export async function GET() {
     try {
@@ -11,22 +11,21 @@ export async function GET() {
             return NextResponse.json({ message: "You are not logged in" });
         }
         await connectToDatabase();
-        const prompts = await Prompt.find({}).lean() // Use .lean() for better performance
-
+        const posts = await Post.find({}).lean() // Use .lean() for better performance
         // Convert MongoDB documents to plain objects
-        const promptsData = prompts.map((prompt: any) => ({
-            _id: prompt._id.toString(),
-            title: prompt.title,
-            prompt: prompt.prompt
+        const postsData = posts.map((post: any) => ({
+            _id: post._id.toString(),
+            title: post.title,
+            post: post.post
         }));
-        if (!prompts) {
-            return NextResponse.json({ message: "Prompts not found" }, { status: 404 });
+        if (!posts) {
+            return NextResponse.json({ message: "Posts not found" }, { status: 404 });
         }
-        return NextResponse.json(promptsData);
+        return NextResponse.json(postsData);
     } catch (error) {
-        console.error("Error fetching prompts:", error);
+        console.error("Error fetching posts:", error);
         return NextResponse.json(
-            { message: "Error fetching prompts" },
+            { message: "Error fetching posts" },
             { status: 500 }
         );
     }

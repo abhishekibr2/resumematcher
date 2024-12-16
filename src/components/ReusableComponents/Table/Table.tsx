@@ -426,6 +426,12 @@ export function TableComponent({ config }: TableProps) {
                             config={config.filter}
                             columns={config.columns}
                             onFilterChange={setFilters}
+                            sorting={sorting}
+                            onLoadFilter={(newFilters, newSorting) => {
+                                setFilters(newFilters)
+                                setSorting(newSorting)
+                            }}
+                            tableName={config.title?.toLowerCase() || 'default'}
                         />
                     )}
 

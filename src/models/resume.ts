@@ -53,7 +53,7 @@ const resumeSchema = new mongoose.Schema({
   contact: contactSchema,
   summary: String,
   skills: [String],
-  status: { type: String, default: "applied" },
+  status: { type: String, default: "Onboarding" },
   workExperience: [workExperienceSchema],
   education: [educationSchema],
   certifications: [certificationSchema],

@@ -29,6 +29,8 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
+import { useSession } from "next-auth/react";
+import { Textarea } from "@/components/ui/textarea"
 
 interface TableEditProps {
     config: TableConfig;
@@ -38,7 +40,9 @@ interface TableEditProps {
 
 type FormDataType = {
     [key: string]: any;
-}
+    createdBy?: string;
+    updatedBy?: string;
+};
 
 
 // Move helper functions outside the component
@@ -62,6 +66,7 @@ const getNestedValue = (obj: any, path: string) => {
 };
 
 export function TableEdit({ config, data, onSuccess }: TableEditProps) {
+    const { data: session } = useSession();
     const [isOpen, setIsOpen] = useState(false)
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
@@ -94,6 +99,15 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
                 description: "Please wait while we process your request.",
             })
 
+            const submitData = { ...formData };
+
+            // Add updatedBy information
+            config.columns.forEach(column => {
+                if (column.accessorKey === 'updatedBy' && session?.user) {
+                    submitData.updatedBy = session.user.name || '';
+                }
+            });
+
             const response = await fetch(`/api/${config.endpoints.update}`, {
                 method: 'PUT',
                 headers: {
@@ -101,7 +115,7 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
                 },
                 body: JSON.stringify({
                     _id: data._id,
-                    ...formData
+                    ...submitData
                 }),
             })
 
@@ -273,7 +287,17 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
                         />
                     </div>
                 )
-
+            case 'textarea':
+                return (
+                    <div className="space-y-2" key={column.id}>
+                        <Label htmlFor={column.accessorKey}>{column.header}</Label>
+                        <Textarea
+                            {...commonProps}
+                            value={formData[column.accessorKey] ?? ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, [column.accessorKey]: e.target.value }))}
+                        />
+                    </div>
+                )
             case 'number':
                 return (
                     <div className="space-y-2" key={column.id}>
@@ -296,7 +320,7 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
                             {column.header}
                         </Label>
                         <Select
-                            value={formData[column.accessorKey]}
+                            value={String(formData[column.accessorKey])}
                             onValueChange={(value) =>
                                 setFormData((prev) => ({ ...prev, [column.accessorKey]: value }))
                             }
@@ -306,7 +330,7 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
                             </SelectTrigger>
                             <SelectContent>
                                 {column.options?.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
+                                    <SelectItem key={String(option.value)} value={String(option.value)}>
                                         {option.label}
                                     </SelectItem>
                                 ))}
@@ -389,9 +413,8 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
 
     // Filter out system fields
     const columns = config.columns.filter(col =>
-        col.accessorKey !== 'createdAt' &&
-        col.accessorKey !== 'updatedAt'
-    )
+        !['createdAt', 'updatedAt', 'createdBy', 'updatedBy'].includes(col.accessorKey)
+    );
 
     return (
         <>

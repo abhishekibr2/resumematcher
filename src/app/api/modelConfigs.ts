@@ -1,7 +1,7 @@
-import { Prompt } from "@/models/Prmopt"
 import { Resume } from "@/models/resume"
 import { Status } from "@/models/Status"
 import { User } from "@/models/user"
+import { Post } from "@/models/posts"
 
 export const modelConfigs = {
   resume: {
@@ -11,11 +11,11 @@ export const modelConfigs = {
     importFields: ['fullName', 'contact.email', 'contact.phone', 'stats.Expertise'],
     permissions: ['read', 'create', 'update', 'delete', 'bulk-operation']
   },
-  prompt: {
-    model: Prompt,
-    searchableFields: ['title', 'prompt'],
-    exportFields: ['title', 'prompt'],
-    importFields: ['title', 'prompt'],
+  posts: {
+    model: Post,
+    searchableFields: ['title', 'post'],
+    exportFields: ['title', 'post'],
+    importFields: ['title', 'post'],
     permissions: ['read', 'create', 'update', 'delete', 'bulk-operation']
   },
   users: {
