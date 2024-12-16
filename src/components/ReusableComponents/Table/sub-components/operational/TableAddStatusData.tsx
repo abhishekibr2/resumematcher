@@ -442,7 +442,7 @@ export function TableAddStatusData({ config, onSuccess }: TableAddProps) {
                             {column.header}
                         </Label>
                         <Select
-                            value={formData[column.accessorKey] ?? column.options?.[0]?.value ?? ''}
+                            value={String(formData[column.accessorKey] ?? column.options?.[0]?.value ?? '')}
                             onValueChange={(value) =>
                                 setFormData((prev) => ({ ...prev, [column.accessorKey]: value }))
                             }
@@ -452,7 +452,10 @@ export function TableAddStatusData({ config, onSuccess }: TableAddProps) {
                             </SelectTrigger>
                             <SelectContent>
                                 {column.options?.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
+                                    <SelectItem 
+                                        key={String(option.value)} 
+                                        value={String(option.value)}
+                                    >
                                         {option.label}
                                     </SelectItem>
                                 ))}
