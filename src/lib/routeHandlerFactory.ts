@@ -6,6 +6,7 @@ import { parse } from 'csv-parse'
 import { Parser } from 'json2csv'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
+import bcrypt from 'bcryptjs';
 
 // Add this type declaration
 declare module 'jspdf' {
@@ -21,6 +22,8 @@ interface RouteHandlerOptions {
     exportFields?: string[];
     importFields?: string[];
 }
+
+
 
 // Add this helper function before the export handler
 const formatObjectForExport = (obj: any, parentKey: string = ''): string => {
@@ -57,15 +60,47 @@ const setNestedValue = (obj: any, path: string, value: any) => {
 
 export function createRouteHandlers({ model, permissions = [], searchableFields = [], exportFields = [], importFields = [] }: RouteHandlerOptions) {
     return {
-        // GET handler for fetching data with filtering, sorting, and pagination
-        async getAll(request: NextRequest) {
 
+
+        async getAll(request: NextRequest) {
+            // Existing permission check remains the same
             if (!permissions.includes('read')) {
                 return NextResponse.json({
                     status: 403,
                     message: "You are not authorized to access this resource"
                 }, { status: 403 })
             }
+
+            // Helper function to sanitize items
+            const sanitizeItems = (items: any[]) => {
+                return items.map(item => {
+                    // Create a deep copy of the item to avoid modifying the original
+                    const sanitizedItem = JSON.parse(JSON.stringify(item));
+
+                    // Recursively mask password fields
+                    const maskSensitiveFields = (obj: any) => {
+                        for (const key in obj) {
+                            if (obj.hasOwnProperty(key)) {
+                                if (typeof obj[key] === 'object' && obj[key] !== null) {
+                                    // Recursively check nested objects
+                                    maskSensitiveFields(obj[key]);
+                                } else if (
+                                    // Check for password-related field names
+                                    key.toLowerCase().includes('password') ||
+                                    key.toLowerCase().includes('pwd') ||
+                                    key.toLowerCase().includes('secret')
+                                ) {
+                                    obj[key] = "[sensitive information]";
+                                }
+                            }
+                        }
+                    };
+
+                    maskSensitiveFields(sanitizedItem);
+                    return sanitizedItem;
+                });
+            };
+
             try {
                 const searchParams = request.nextUrl.searchParams
                 const sort = searchParams.get('sort')
@@ -128,7 +163,6 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
                     };
                 }
 
-                console.log({ filterQuery })
 
                 const finalQuery = { ...searchQuery, ...filterQuery }
 
@@ -149,9 +183,12 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
                         .skip((page - 1) * pageSize)
                         .limit(pageSize)
 
-                    if (items.length === 0) {
+                    // Sanitize items before sending
+                    const sanitizedItems = sanitizeItems(items);
+
+                    if (sanitizedItems.length === 0) {
                         return NextResponse.json({
-                            status: 200, // Change to 200 for no matching records
+                            status: 200,
                             message: "No records found",
                             data: {
                                 items: [],
@@ -165,12 +202,11 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
                         });
                     }
 
-
                     return NextResponse.json({
                         status: 200,
                         message: "Data fetched successfully",
                         data: {
-                            items,
+                            items: sanitizedItems,
                             pagination: {
                                 totalItems,
                                 totalPages,
@@ -235,11 +271,18 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
                 Object.entries(data).forEach(([key, value]) => {
                     if (Array.isArray(value)) {
                         processedData[key] = value.map(item => {
-                            // Add any necessary processing for array items
                             return item
                         })
                     }
                 })
+
+                // Hash the password before saving
+
+                if (data.password) {
+                    const salt = await bcrypt.genSalt(10);
+                    const hashedPassword = await bcrypt.hash(data.password, salt);
+                    processedData.password = hashedPassword
+                }
 
                 const item = new model({
                     ...processedData,
@@ -292,6 +335,13 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
                         status: 400,
                         message: "ID is required for update"
                     }, { status: 400 })
+                }
+                // Hash the password before saving
+
+                if (updateData.password) {
+                    const salt = await bcrypt.genSalt(10);
+                    const hashedPassword = await bcrypt.hash(updateData.password, salt);
+                    updateData.password = hashedPassword
                 }
 
                 try {
@@ -469,11 +519,20 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
                     }, { status: 400 })
                 }
 
-                const items = transformedRecords.map(record => ({
-                    ...record,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                }))
+                // Hash the password before saving
+
+                const items = transformedRecords.map(async (record) => {
+                    if (record.password) {
+                        const salt = await bcrypt.genSalt(10);
+                        const hashedPassword = await bcrypt.hash(record.password, salt);
+                        record.password = hashedPassword;
+                    }
+                    return {
+                        ...record,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    }
+                })
 
                 try {
                     await model.insertMany(items)
@@ -550,6 +609,7 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
                     })
                     return exportData
                 })
+
 
                 let response: Response
 
@@ -685,6 +745,12 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
         async bulkUpdate(request: Request) {
             try {
                 const { ids, updates } = await request.json()
+
+                if (updates.password) {
+                    const salt = await bcrypt.genSalt(10);
+                    const hashedPassword = await bcrypt.hash(updates.password, salt);
+                    updates.password = hashedPassword;
+                }
 
                 await model.updateMany(
                     { _id: { $in: ids } },  // Query to match documents

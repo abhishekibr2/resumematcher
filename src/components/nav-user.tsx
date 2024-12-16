@@ -80,6 +80,7 @@ export function NavUser({
                   <span className="truncate text-xs">{user.email}</span>
                 </div>
               </div>
+              <ModeToggle />
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
@@ -91,9 +92,6 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-              <DropdownMenuItem >
-                <ModeToggle />
-              </DropdownMenuItem>
             <DropdownMenuItem onClick={() => {
               signOut();
               router.push('/log-in')
