@@ -80,10 +80,6 @@ export const statusTableConfig: TableConfig<StatusData> = {
   filter: {
     enabled: true,
     operators: [
-      { label: 'Equals', value: 'equals' },
-      { label: 'Not Equals', value: 'notEquals' },
-      { label: 'Contains', value: 'contains' },
-      { label: 'Not Contains', value: 'notContains' }
     ]
   },
   columnToggle: {
