@@ -5,7 +5,6 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 export async function POST(req: NextRequest) {
     try {
         const { data, jobPost } = await req.json();
-        // console.log({data},{jobPost},{yearsOfExperience})
 
         // Validate API key
         const apiKey = process.env.GEMINI_API_KEY;

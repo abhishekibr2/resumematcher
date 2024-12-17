@@ -86,11 +86,6 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
     const { toast } = useToast()
 
 
-
-    useEffect(() => {
-        console.log({ config })
-    }, [])
-
     const handleUpdate = async () => {
         try {
             setIsLoading(true)

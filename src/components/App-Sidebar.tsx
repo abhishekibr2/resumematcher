@@ -10,7 +10,7 @@ import {
     Languages,
     Settings,
 } from "lucide-react"
-
+import Link from "next/link"
 
 import {
     Sidebar,
@@ -24,20 +24,21 @@ import { TeamSwitcher } from "./team-switcher"
 import { NavUser } from "./nav-user"
 import { NavMain } from "./nav-main"
 
-// This is sample data.
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+    isAdmin?: boolean;
+    companyName?: string;
+}
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-
+export function AppSidebar({ isAdmin = false, companyName = "Default Company", ...props }: AppSidebarProps) {
     const { data: session } = useSession();
     const data = {
         user: {
             name: session?.user?.name || "User",
             email: session?.user?.email || "",
-            // avatar: session?.user?.image || "/avatars/shadcn.jpg",
         },
         teams: [
             {
-                name: "IBR Infotech",
+                name: companyName,
                 logo: GalleryVerticalEnd,
                 plan: "Enterprise",
             },
@@ -82,7 +83,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     },
                 ],
             },
-            ...((session?.user.role === "admin") ? [{
+            ...(isAdmin ? [{
                 title: "Admin",
                 url: "/admin",
                 icon: Settings,
@@ -91,6 +92,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         title: "Users",
                         url: "/users",
                     },
+                    {
+                        title: "Roles",
+                        url: "/roles",
+                    },
+                    {
+                        title: "Settings",
+                        url: "/settings",
+                    },
                 ],
             }] : [])
         ],
@@ -98,7 +107,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return (
         <Sidebar collapsible="icon" {...props}>
             <SidebarHeader>
-                <TeamSwitcher teams={data.teams} />
+                <TeamSwitcher teams={data.teams} companyName={companyName} />
             </SidebarHeader>
             <SidebarContent>
                 <NavMain items={data.navMain} />

@@ -6,16 +6,16 @@ import { Post } from "@/models/posts"
 export const modelConfigs = {
   resume: {
     model: Resume,
-    searchableFields: ['fullName', 'contact.email', 'contact.phone', 'stats.Expertise'],
+    searchableFields: ['fullName', 'contact.email', 'contact.phone', 'status'],
     exportFields: ['fullName', 'contact.email', 'contact.phone', 'stats.Expertise'],
     importFields: ['fullName', 'contact.email', 'contact.phone', 'stats.Expertise'],
     permissions: ['read', 'create', 'update', 'delete', 'bulk-operation']
   },
   posts: {
     model: Post,
-    searchableFields: ['title', 'post'],
-    exportFields: ['title', 'post'],
-    importFields: ['title', 'post'],
+    searchableFields: ['title', 'post', 'createdBy'],
+    exportFields: ['title', 'post', 'createdBy'],
+    importFields: ['title', 'post', 'createdBy'],
     permissions: ['read', 'create', 'update', 'delete', 'bulk-operation']
   },
   users: {

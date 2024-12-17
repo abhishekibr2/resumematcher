@@ -5,13 +5,15 @@ import { FilterValue } from '@/types/table.types'
 import { parse } from 'csv-parse'
 import { Parser } from 'json2csv'
 import * as XLSX from 'xlsx'
-import jsPDF from 'jspdf'
+import { jsPDF } from 'jspdf'
+import 'jspdf-autotable'
 import bcrypt from 'bcryptjs';
+import Roles from '@/models/Roles'
 
-// Add this type declaration
+// Add after imports
 declare module 'jspdf' {
     interface jsPDF {
-        autoTable: (options: any) => jsPDF
+        autoTable: (options: any) => jsPDF;
     }
 }
 
@@ -127,7 +129,7 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
                 if (search && searchColumns) {
                     //check if they are objects
                     if (!searchColumns.every(col => searchableFields.includes(col))) {
-                        console.log("Invalid search columns specified")
+                        console.log("Invalid search columns specified", { searchColumns, searchableFields })
                         return NextResponse.json({
                             status: 400,
                             message: "Invalid search columns specified"
@@ -231,7 +233,30 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
         async create(request: Request) {
             try {
                 const data = await request.json()
-                console.log({ data })
+
+                // If this is a user creation and we have roleName but no role
+                if (model.modelName === 'users' && data.roleName && !data.role) {
+                    try {
+                        // Fetch the role using the roleName (which is actually the role ID)
+                        const role = await Roles.findById(data.roleName)
+                        if (!role) {
+                            return NextResponse.json({
+                                status: 400,
+                                message: "Invalid role specified"
+                            }, { status: 400 })
+                        }
+
+                        // Set both role and roleName correctly
+                        data.role = role._id
+                        data.roleName = role.name // Set the actual role name
+                    } catch (error) {
+                        console.error('Error fetching role:', error)
+                        return NextResponse.json({
+                            status: 400,
+                            message: "Invalid role specified"
+                        }, { status: 400 })
+                    }
+                }
 
                 // Helper function to check nested fields
                 const checkNestedField = (obj: any, path: string): boolean => {
@@ -257,9 +282,7 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
                     }
                     return !data[field]
                 })
-
                 if (missingFields.length > 0) {
-                    console.log({ missingFields })
                     return NextResponse.json({
                         status: 400,
                         message: `Missing required fields: ${missingFields.join(', ')}`
