@@ -8,36 +8,98 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-
 export default function RootLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
-
     const { data: session, status } = useSession();
     const [isLoading, setIsLoading] = useState(true);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [companyName, setCompanyName] = useState("");
+    const [redirectToResume, setRedirectToResume] = useState(false);
     const router = useRouter();
+
+    const checkAdmin = async () => {
+        try {
+            if (!session?.user?.role) {
+                setIsAdmin(false);
+                return;
+            }
+
+            const response = await fetch(`/api/check-admin`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    userId: session.user._id,
+                    role: session.user.role,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to check admin status');
+            }
+
+            const data = await response.json();
+
+            if (!data.ok) {
+                throw new Error(data.message || 'Failed to verify admin status');
+            }
+
+            setIsAdmin(data.isAdmin);
+        } catch (error) {
+            console.error("Error checking admin status:", error);
+            setIsAdmin(false);
+        }
+    };
+
+    const fetchSettings = async () => {
+        try {
+            const response = await fetch('/api/settings');
+            const data = await response.json();
+            if (data.success) {
+                setCompanyName(data.settings.companyName);
+                setRedirectToResume(data.settings.redirectToResume);
+            }
+        } catch (error) {
+            console.error("Error fetching settings:", error);
+            setCompanyName("Default Company");
+            setRedirectToResume(false);
+        }
+    };
+
+    useEffect(() => {
+        if (redirectToResume) {
+            console.log("Redirecting to all resumes");
+            console.log(redirectToResume);
+            router.push("/all-resumes");
+        }
+    }, [redirectToResume]);
 
     useEffect(() => {
         if (status === "loading") {
             setIsLoading(true);
         } else if (status !== "authenticated") {
+            setIsLoading(false);
             toast({
                 description: "You are not logged in",
                 variant: "default",
             });
             router.push("/log-in");
         } else {
-            setIsLoading(false);
+            Promise.all([checkAdmin(), fetchSettings()]).finally(() => {
+                setIsLoading(false);
+            });
         }
-    }, [status, session, router]);
+    }, [status, session]);
 
     return (
         <>
             {!isLoading ? (
                 <SidebarProvider>
-                    <AppSidebar />
+                    <AppSidebar isAdmin={isAdmin} companyName={companyName} />
                     <main className="w-full px-4">
                         <SidebarTrigger />
                         {children}

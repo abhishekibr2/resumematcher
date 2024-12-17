@@ -128,6 +128,11 @@ export const postsTableConfig: TableConfig<PostsData> = {
     allowDelete: true,
     fields: [
       {
+        name: 'title',
+        label: 'Title',
+        type: 'input'
+      },
+      {
         name: 'post',
         label: 'Post',
         type: 'textarea'

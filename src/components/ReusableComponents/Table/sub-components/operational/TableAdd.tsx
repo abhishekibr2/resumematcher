@@ -25,6 +25,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { TableColumn, TableConfig } from "@/types/table.types";
 import { filterOptions } from "../../data/filterOptions";
 import { useSession } from "next-auth/react";
+import { Textarea } from "@/components/ui/textarea";
 
 interface TableAddProps {
     config: TableConfig;
@@ -446,7 +447,21 @@ export function TableAdd({ config, onSuccess }: TableAddProps) {
                         />
                     </div>
                 );
-
+            case "textarea":
+                return (
+                    <div className="space-y-1" key={column.id}>
+                        <Label htmlFor={column.accessorKey} className="text-sm font-medium">
+                            {column.header}
+                        </Label>
+                        <Textarea
+                            {...commonProps}
+                            value={formData[column.accessorKey] ?? ''}
+                            onChange={(e: any) =>
+                                setFormData((prev) => ({ ...prev, [column.accessorKey]: e.target.value }))
+                            }
+                        />
+                    </div>
+                );
             case "select":
                 return (
                     <div className="space-y-1" key={column.id}>

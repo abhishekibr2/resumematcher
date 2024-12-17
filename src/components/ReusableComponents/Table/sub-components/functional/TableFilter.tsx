@@ -54,6 +54,22 @@ const typeOperators: Record<string, { label: string; value: FilterOperator }[]> 
         { label: 'Starts With', value: 'startsWith' },
         { label: 'Ends With', value: 'endsWith' }
     ],
+    hidden: [
+        { label: 'Equals', value: 'equals' },
+        { label: 'Not Equals', value: 'notEquals' },
+    ],
+    textarea: [
+        { label: 'Equals', value: 'equals' },
+        { label: 'Not Equals', value: 'notEquals' },
+        { label: 'Contains', value: 'contains' },
+        { label: 'Not Contains', value: 'notContains' }
+    ],
+    email: [
+        { label: 'Equals', value: 'equals' },
+        { label: 'Not Equals', value: 'notEquals' },
+        { label: 'Contains', value: 'contains' },
+        { label: 'Not Contains', value: 'notContains' }
+    ],
     number: [
         { label: 'Equals', value: 'equals' },
         { label: 'Not Equals', value: 'notEquals' },
@@ -101,8 +117,10 @@ export function TableFilter({ columns, onFilterChange, sorting, onLoadFilter, ta
     }
 
     const removeFilter = (index: number) => {
-        const newFilters = localFilters.filter((_, i) => i !== index)
-        setLocalFilters(newFilters)
+        const updatedFilters = localFilters.filter((_, i) => i !== index);
+        setLocalFilters(updatedFilters);
+        setFilters(updatedFilters);
+        onFilterChange(updatedFilters);
     }
 
     const updateFilter = (index: number, field: keyof FilterValue, value: string) => {
@@ -317,7 +335,7 @@ export function TableFilter({ columns, onFilterChange, sorting, onLoadFilter, ta
                 }),
             })
 
-            if (!response.ok) throw new Error('Failed to save filter')
+            if (!response.ok) throw new Error(response.statusText)
 
             toast({
                 title: "Success",
@@ -325,10 +343,10 @@ export function TableFilter({ columns, onFilterChange, sorting, onLoadFilter, ta
             })
             setSaveDialogOpen(false)
             setFilterName("")
-        } catch (error) {
+        } catch (error: any) {
             toast({
                 title: "Error",
-                description: "Failed to save filter",
+                description: error.message || "Failed to save filter",
                 variant: "destructive"
             })
         }
@@ -339,10 +357,10 @@ export function TableFilter({ columns, onFilterChange, sorting, onLoadFilter, ta
             const response = await fetch(`/api/filters?tableName=${tableName}`)
             const data = await response.json()
             setSavedFilters(data)
-        } catch (error) {
+        } catch (error: any) {
             toast({
                 title: "Error",
-                description: "Failed to load filters",
+                description: error.message || "Failed to load filters",
                 variant: "destructive"
             })
         }
@@ -355,6 +373,13 @@ export function TableFilter({ columns, onFilterChange, sorting, onLoadFilter, ta
             onLoadFilter(savedFilter.filters, savedFilter.sorting)
         }
         setLoadDialogOpen(false)
+        setIsOpen(false)
+    }
+
+    const clearAllFilters = () => {
+        setFilters([])
+        setLocalFilters([])
+        onFilterChange([])
         setIsOpen(false)
     }
 
@@ -441,13 +466,22 @@ export function TableFilter({ columns, onFilterChange, sorting, onLoadFilter, ta
                             </Button>
 
                             {localFilters.length > 0 && (
-                                <Button
-                                    variant="default"
-                                    size="sm"
-                                    onClick={handleApplyFilters}
-                                >
-                                    Apply Filters
-                                </Button>
+                                <>
+                                    <Button
+                                        variant="default"
+                                        size="sm"
+                                        onClick={handleApplyFilters}
+                                    >
+                                        Apply Filters
+                                    </Button>
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={clearAllFilters}
+                                    >
+                                        Clear Filters
+                                    </Button>
+                                </>
                             )}
                         </div>
                     </div>
@@ -479,6 +513,17 @@ export function TableFilter({ columns, onFilterChange, sorting, onLoadFilter, ta
                     </div>
                 </DropdownMenuContent>
             </DropdownMenu>
+
+            {filters.length > 0 && (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearAllFilters}
+                    className="ml-2"
+                >
+                    Clear Filters
+                </Button>
+            )}
 
             <Dialog open={isSaveDialogOpen} onOpenChange={setSaveDialogOpen}>
                 <DialogContent>

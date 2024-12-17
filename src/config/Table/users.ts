@@ -1,9 +1,10 @@
 "use client"
 import { TableConfig } from "../../types/table.types";
 
-interface UserData {
+export interface UserData {
   name: string;
   email: string;
+  roleName: string;
   role: string;
   resetToken?: string;
   resetTokenExpiry?: Date;
@@ -69,23 +70,20 @@ export const userTableConfig: TableConfig<UserData> = {
       type: "text"
     },
     {
-      id: "role",
+      id: "roleName",
       header: "Role",
-      accessorKey: "role",
+      accessorKey: "roleName",
       className: "w-[150px]",
       sortable: true,
       filterable: true,
       type: "select",
-      options: [
-        { label: "Admin", value: "admin" },
-        { label: "User", value: "user" },
-      ]
-    },
+      options: []
+    }
   ],
   search: {
     enabled: true,
     placeholder: "Search users...",
-    searchableColumns: ["name", "email", "role"]
+    searchableColumns: ["name", "email", "roleName"]
   },
   pagination: {
     enabled: true,
@@ -151,7 +149,6 @@ export const userTableConfig: TableConfig<UserData> = {
     }
   },
   bulkEdit: {
-
     enabled: true,
     allowDelete: true,
     fields: [
@@ -159,10 +156,7 @@ export const userTableConfig: TableConfig<UserData> = {
         name: 'role',
         label: 'Role',
         type: 'select',
-        options: [
-          { label: 'User', value: 'user' },
-          { label: 'Admin', value: 'admin' },
-        ]
+        options: []
       },
       {
         name: 'email',

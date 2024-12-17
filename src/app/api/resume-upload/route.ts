@@ -12,6 +12,7 @@ import {
 import { GoogleAIFileManager } from "@google/generative-ai/server";
 import { connectToDatabase } from '@/lib/mongodb';
 import { Resume } from '@/models/resume';
+import Settings from '@/models/settings';
 
 // Resume parsing configuration
 const ALLOWED_FILE_TYPES = [
@@ -27,7 +28,6 @@ export async function POST(req: NextRequest) {
         // Parse form data
         const formData = await req.formData();
         const file = formData.get('file') as File;
-        const postText = formData.get('postText') as string;
         const status = formData.get('status') as string;
 
         // Validate file
@@ -64,7 +64,8 @@ export async function POST(req: NextRequest) {
         await writeFile(filePath, Buffer.from(bytes));
 
         // Validate Gemini API key
-        const apiKey = process.env.GEMINI_API_KEY;
+        const settings = await Settings.findOne({});
+        const apiKey = settings?.geminiApiKey || process.env.GEMINI_API_KEY;
         if (!apiKey) {
             fs.unlinkSync(filePath);
             return NextResponse.json({ error: "API key is missing" }, { status: 500 });
@@ -138,17 +139,7 @@ export async function POST(req: NextRequest) {
             },
             {
                 text: `Extract data from this resume and return a detailed JSON with the following structure:
-${JSON.stringify(resumeSchema, null, 2)}
-
-Guidelines:
-1. Populate all fields with appropriate data
-2. Use empty arrays or null if no data is found
-3. Be precise and comprehensive
-4. Focus on professional and educational details
-5. Return only the JSON
-6. Rating from 1 to 10 (1 lowest, 10 highest)
-7. Dates in dd/mm/yyyy format
-${postText || ""}`
+${JSON.stringify(resumeSchema, null, 2)}` + settings?.overwritePrompt
             }
         ];
 
