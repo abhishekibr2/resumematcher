@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table"
 import { TableProps, SortingState, PaginationState, FilterValue } from "@/types/table.types"
 import { fetchTableData } from "@/lib/utils"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { ChevronUp, ChevronDown, PlusIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TableSearch } from "./sub-components/functional/TableSearch"
@@ -117,7 +117,7 @@ export function TableComponent({ config }: TableProps) {
         }
     }, [selectedStatus])
 
-    const loadTableData = async (sortParams = '', searchParams = '') => {
+    const loadTableData = useCallback(async (sortParams = '', searchParams = '') => {
         if (initialLoading) {
             setInitialLoading(true)
         } else {
@@ -142,6 +142,17 @@ export function TableComponent({ config }: TableProps) {
                 totalItems: response.data.pagination?.totalItems || 0
             }))
             setError(null)
+
+            // After loading table data, refresh status options if needed
+            if (config.columns.some(col => col.accessorKey === 'status')) {
+                try {
+                    const statusResponse = await fetch('/api/status')
+                    const statusData = await statusResponse.json()
+                    setStatusOptions(statusData)
+                } catch (error) {
+                    console.error('Failed to fetch status options', error)
+                }
+            }
         } catch (error) {
             setError('Failed to fetch data')
             setData([])
@@ -149,7 +160,7 @@ export function TableComponent({ config }: TableProps) {
             setInitialLoading(false)
             setOperationLoading(false)
         }
-    }
+    }, [config.endpoints.getAll, sorting, searchTerm, pagination.pageSize, pagination.pageIndex, filters, config.title])
 
     useEffect(() => {
         const sortParams = sorting.column && sorting.direction
@@ -271,7 +282,8 @@ export function TableComponent({ config }: TableProps) {
                     className="px-2 py-1 rounded-full text-white"
                     style={{
                         backgroundColor: statusOption?.color || '#000000',
-                        display: 'inline-block'
+                        display: 'inline-block',
+                        color: statusOption?.color ? (statusOption.color === '#000000' ? 'white' : '#000000') : 'white'
                     }}
                 >
                     {actualValue}
@@ -667,7 +679,12 @@ export function TableComponent({ config }: TableProps) {
                                             <TableEdit
                                                 config={config}
                                                 data={row}
-                                                onSuccess={() => loadTableData()}
+                                                onSuccess={(updatedStatusData: any) => {
+                                                    if (updatedStatusData) {
+                                                        setStatusOptions(updatedStatusData)
+                                                    }
+                                                    loadTableData()
+                                                }}
                                             />
                                         </TableCell>
                                     )}

@@ -77,6 +77,15 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
       type: "email"
     },
     {
+      id: "experience",
+      header: "Experience",
+      accessorKey: "stats.experience",
+      className: "w-[150px]",
+      sortable: true,
+      filterable: true,
+      type: "text"
+    },
+    {
       id: "phone",
       header: "Phone",
       accessorKey: "contact.phone",

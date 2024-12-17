@@ -154,19 +154,42 @@ ${JSON.stringify(resumeSchema, null, 2)}\n\n${settings?.overwritePrompt}\n\nSpec
         const responseText = result.response.text();
         const parsedResume = parseGeminiResponse(responseText);
 
-        // Save to database
-        await connectToDatabase();
-        const resume = new Resume({
-            ...parsedResume,
-            resumeFilePath: filePath,
-            status: status
-        });
-        await resume.save();
+        // Check for existing resume
+        try {
+            await connectToDatabase();
+            const existingResume = await Resume.findOne({
+                'contact.email': parsedResume.contact?.email,
+                'fullName': parsedResume.fullName
+            });
 
-        return NextResponse.json({
-            message: "Resume processed successfully",
-            data: parsedResume
-        });
+            if (existingResume) {
+                return NextResponse.json({
+                    error: "Duplicate resume",
+                    message: `Resume for ${parsedResume.fullName} with email ${parsedResume.contact?.email} already exists.`,
+                    isDuplicate: true
+                }, { status: 409 }); // 409 Conflict status code
+            }
+
+            // If no duplicate, save the resume
+            const resume = new Resume({
+                ...parsedResume,
+                resumeFilePath: filePath,
+                status: status
+            });
+            await resume.save();
+
+            return NextResponse.json({
+                message: "Resume processed successfully",
+                data: parsedResume
+            });
+
+        } catch (error) {
+            console.error("Error during file processing:", error);
+            return NextResponse.json({
+                error: "Internal Server Error",
+                details: error instanceof Error ? error.message : String(error)
+            }, { status: 500 });
+        }
 
     } catch (error) {
         console.error("Error during file processing:", error);
@@ -251,6 +274,7 @@ const resumeSchema = {
     "stats": {
         "Expertise": "give a shrot expertise title like MERN Stack,PHP developeretc ",
         "Rating": "give a rating from 1 to 10 according to the specific requirements.",
-        "should_contact": "true or false according to the specific requirements. if he is not eligible for the specific requirements then return false."
+        "should_contact": "true or false according to the specific requirements. if he is not eligible for the specific requirements then return false.",
+        "experience": "calculate the experience in years and should be calculated based on the specific requirements.For example '2.2 years'"
     }
 };

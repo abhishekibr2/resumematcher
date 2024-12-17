@@ -19,7 +19,7 @@ import { useSession } from "next-auth/react"
 
 interface TableAddProps {
     config: TableConfig
-    onSuccess?: () => void
+    onSuccess?: (statusData: any) => void
 }
 
 export function TableAddStatusData({ config, onSuccess }: TableAddProps) {
@@ -51,6 +51,11 @@ export function TableAddStatusData({ config, onSuccess }: TableAddProps) {
                 throw new Error("Failed to add status")
             }
 
+            const data = await response.json()
+
+            const statusResponse = await fetch('/api/status')
+            const statusData = await statusResponse.json()
+            
             setIsOpen(false)
             setStatusName("")
             setColor("#000000")
@@ -59,7 +64,10 @@ export function TableAddStatusData({ config, onSuccess }: TableAddProps) {
                 description: "Status has been added successfully.",
                 variant: "default",
             })
-            onSuccess?.()
+            
+            if (onSuccess) {
+                onSuccess(statusData)
+            }
         } catch (error) {
             toast({
                 title: "Error",

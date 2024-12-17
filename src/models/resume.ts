@@ -62,7 +62,8 @@ const resumeSchema = new mongoose.Schema({
   stats: {
     Expertise: String,
     Rating: Number,
-    should_contact: Boolean
+    should_contact: Boolean,
+    experience: String
   },
   resumeFilePath: { type: String, required: true },
 },

@@ -210,10 +210,12 @@ export default function DashboardPage() {
 
     try {
       const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-      let allFilesProcessed = true;
-      
+      let successCount = 0;
+      let failureCount = 0;
+      let duplicateCount = 0;
+
       for (const [index, fileWithStatus] of selectedFiles.entries()) {
-        setSelectedFiles(prev => prev.map((item, i) => 
+        setSelectedFiles(prev => prev.map((item, i) =>
           i === index ? { ...item, loading: true } : item
         ));
 
@@ -221,7 +223,7 @@ export default function DashboardPage() {
         formData.append('file', fileWithStatus.file);
         formData.append('postId', selectedPost);
         formData.append('postText', selectedPostText);
-        
+
         const selectedStatusObj = status.find(s => s._id === selectedStatus);
         formData.append('status', selectedStatusObj?.status || '');
 
@@ -234,45 +236,62 @@ export default function DashboardPage() {
           const data = await response.json();
 
           if (!response.ok) {
-            allFilesProcessed = false;
-            toast({
-              title: `Failed to upload ${fileWithStatus.file.name}`,
-              description: data.error || 'Unknown error occurred',
-              variant: 'destructive',
-            });
-            setSelectedFiles(prev => prev.map((item, i) => 
-              i === index ? { ...item, loading: false, uploaded: false } : item
-            ));
+            if (response.status === 409) {
+              duplicateCount++;
+              toast({
+                title: "Duplicate Resume",
+                description: data.message,
+                variant: 'destructive',
+              });
+              setSelectedFiles(prev => prev.map((item, i) =>
+                i === index ? { ...item, loading: false, uploaded: false } : item
+              ));
+            } else {
+              failureCount++;
+              toast({
+                title: `Failed to upload ${fileWithStatus.file.name}`,
+                description: data.error || 'Unknown error occurred',
+                variant: 'destructive',
+              });
+              setSelectedFiles(prev => prev.map((item, i) =>
+                i === index ? { ...item, loading: false, uploaded: false } : item
+              ));
+            }
             continue;
           }
 
-          setSelectedFiles(prev => prev.map((item, i) => 
+          successCount++;
+          setSelectedFiles(prev => prev.map((item, i) =>
             i === index ? { ...item, loading: false, uploaded: true } : item
           ));
 
           await delay(1000);
 
         } catch (error) {
-          allFilesProcessed = false;
+          failureCount++;
           console.error(`Error processing file ${fileWithStatus.file.name}`, error);
           toast({
             title: `Error processing ${fileWithStatus.file.name}`,
             variant: 'destructive',
           });
-          setSelectedFiles(prev => prev.map((item, i) => 
+          setSelectedFiles(prev => prev.map((item, i) =>
             i === index ? { ...item, loading: false, uploaded: false } : item
           ));
         }
       }
 
-      if (allFilesProcessed) {
-        toast({
-          title: 'All Resumes added and analysed successfully',
-          variant: 'default',
-        });
-        await delay(1500);
-        router.push('/all-resumes');
-      }
+      // Show final summary toast
+      const summaryParts = [];
+      if (successCount > 0) summaryParts.push(`${successCount} uploaded`);
+      if (duplicateCount > 0) summaryParts.push(`${duplicateCount} duplicates`);
+      if (failureCount > 0) summaryParts.push(`${failureCount} failed`);
+
+      toast({
+        title: 'Upload Summary',
+        description: summaryParts.join(', '),
+        variant: successCount > 0 ? 'default' : 'destructive',
+      });
+
     } catch (error) {
       console.error("Error processing files", error);
       toast({
@@ -282,13 +301,16 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
       setIsUploading(false);
+      // Navigate after a short delay, regardless of the upload results
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      router.push('/all-resumes');
     }
   };
 
-  const FileUploadZone = ({ 
-    onFileChange, 
-    disabled 
-  }: { 
+  const FileUploadZone = ({
+    onFileChange,
+    disabled
+  }: {
     onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     disabled?: boolean;
   }) => {
@@ -315,22 +337,22 @@ export default function DashboardPage() {
       e.preventDefault();
       e.stopPropagation();
       setIsDragging(false);
-      
+
       const files = e.dataTransfer.files;
       const fakeEvent = {
         target: {
           files
         }
       } as React.ChangeEvent<HTMLInputElement>;
-      
+
       onFileChange(fakeEvent);
     };
 
     return (
       <div
         className={`relative border-2 border-dashed rounded-lg p-6 transition-colors
-          ${isDragging 
-            ? 'border-primary bg-primary/5' 
+          ${isDragging
+            ? 'border-primary bg-primary/5'
             : 'border-gray-300 dark:border-gray-700 hover:border-primary'
           }
           ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
@@ -430,8 +452,8 @@ export default function DashboardPage() {
                 )}
               </SelectContent>
             </Select>
-            <FileUploadZone 
-              onFileChange={handleFileChange} 
+            <FileUploadZone
+              onFileChange={handleFileChange}
               disabled={isUploading}
             />
 

@@ -35,7 +35,7 @@ import { Textarea } from "@/components/ui/textarea"
 interface TableEditProps {
     config: TableConfig;
     data: any;
-    onSuccess?: () => void;
+    onSuccess?: (updatedData?: any) => void;
 }
 
 type FormDataType = {
@@ -120,13 +120,22 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
                 throw new Error(responseData.message || 'Failed to update user')
             }
 
+            // Fetch updated status options if this is a status edit
+            if (config.title?.toLowerCase() === 'status') {
+                const statusResponse = await fetch('/api/status')
+                const statusData = await statusResponse.json()
+                // Pass the updated status data to the parent through onSuccess
+                onSuccess?.(statusData)
+            } else {
+                onSuccess?.()
+            }
+
             setIsOpen(false)
             toast({
                 title: "Success",
                 description: "User has been updated successfully.",
                 variant: "default"
             })
-            onSuccess?.()
         } catch (error) {
             toast({
                 title: "Error",
@@ -280,6 +289,13 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
                             value={formData[column.accessorKey] ?? ''}
                             onChange={(e) => setFormData(prev => ({ ...prev, [column.accessorKey]: e.target.value }))}
                         />
+                    </div>
+                )
+            case 'color':
+                return (
+                    <div className="space-y-2" key={column.id}>
+                        <Label htmlFor={column.accessorKey}>{column.header}</Label>
+                        <Input type="color" value={formData[column.accessorKey]} onChange={(e) => setFormData(prev => ({ ...prev, [column.accessorKey]: e.target.value }))} />
                     </div>
                 )
             case 'textarea':
