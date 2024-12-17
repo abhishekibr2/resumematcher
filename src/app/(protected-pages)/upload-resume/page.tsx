@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, FileUp, File, FileX, FileText } from "lucide-react";
+import { Loader2, FileUp, File, FileX, FileText, Upload } from "lucide-react";
 import { toast } from '@/hooks/use-toast';
 // Define Post type to match your Mongoose schema
 type Post = {
@@ -19,10 +19,16 @@ type Status = {
   createdBy: string;
 };
 
+// Add this new type near your existing types
+type FileWithStatus = {
+  file: File;
+  loading: boolean;
+  uploaded: boolean;
+};
+
 export default function DashboardPage() {
   const router = useRouter();
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<FileWithStatus[]>([]);
   const [loading, setLoading] = useState(false);
 
   // New state for posts and selected post
@@ -36,6 +42,8 @@ export default function DashboardPage() {
   const [statusLoading, setStatusLoading] = useState(true);
   const [statusError, setStatusError] = useState<string | null>(null);
 
+  // Add this state to track overall upload process
+  const [isUploading, setIsUploading] = useState(false);
 
   // Constants for file validation
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -132,23 +140,12 @@ export default function DashboardPage() {
     const validFiles = validateFiles(e.target.files);
 
     if (validFiles.length > 0) {
-      setSelectedFiles(validFiles);
-
-      // Create preview URLs
-      const previews = validFiles.map(file => {
-        // Determine icon based on file type
-        switch (file.type) {
-          case 'application/pdf':
-            return '/pdf-icon.png';
-          case 'application/msword':
-          case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-            return '/word-icon.png';
-          default:
-            return '/file-icon.png';
-        }
-      });
-
-      setPreviewUrls(previews);
+      const filesWithStatus = validFiles.map(file => ({
+        file,
+        loading: false,
+        uploaded: false
+      }));
+      setSelectedFiles(filesWithStatus);
     }
   };
 
@@ -166,12 +163,10 @@ export default function DashboardPage() {
   };
 
   const handlePostChange = (postId: string) => {
-    // Find the selected post
-    const post = posts.find(p => p._id === postId);
-
-    // Update selected post ID and post text
     setSelectedPost(postId);
-    setSelectedPostText(post ? post.post : '');
+    // Find the selected post and update the text
+    const selectedPostData = posts.find(p => p._id === postId);
+    setSelectedPostText(selectedPostData?.post || '');
   };
 
   const handleStatusChange = (statusId: string) => {
@@ -180,19 +175,13 @@ export default function DashboardPage() {
 
   const processFiles = async () => {
     setLoading(true);
+    setIsUploading(true);
 
-    if (selectedFiles.length === 0) {
+    // Enhanced validation
+    if (!selectedPost || !selectedPostText) {
       toast({
-        title: 'Please select files first',
-        variant: 'destructive',
-      });
-      setLoading(false);
-      return;
-    }
-
-    if (!selectedPost) {
-      toast({
-        title: 'Please select a post',
+        title: 'Invalid Post Selection',
+        description: 'Please select a valid post to continue',
         variant: 'destructive',
       });
       setLoading(false);
@@ -201,7 +190,18 @@ export default function DashboardPage() {
 
     if (!selectedStatus) {
       toast({
-        title: 'Please select a status',
+        title: 'Invalid Status Selection',
+        description: 'Please select a valid status to continue',
+        variant: 'destructive',
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (selectedFiles.length === 0) {
+      toast({
+        title: 'No Files Selected',
+        description: 'Please select at least one file to upload',
         variant: 'destructive',
       });
       setLoading(false);
@@ -209,25 +209,23 @@ export default function DashboardPage() {
     }
 
     try {
-      // Helper function to add delay
       const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      let allFilesProcessed = true;
+      
+      for (const [index, fileWithStatus] of selectedFiles.entries()) {
+        setSelectedFiles(prev => prev.map((item, i) => 
+          i === index ? { ...item, loading: true } : item
+        ));
 
-      // Process files sequentially with a delay
-      for (const [index, file] of selectedFiles.entries()) {
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', fileWithStatus.file);
         formData.append('postId', selectedPost);
         formData.append('postText', selectedPostText);
-        formData.append('status', status.find((s: Status) => s._id === selectedStatus)?.status || '');
+        
+        const selectedStatusObj = status.find(s => s._id === selectedStatus);
+        formData.append('status', selectedStatusObj?.status || '');
 
         try {
-          // Show processing status for current file
-          toast({
-            title: `Processing file ${index + 1} of ${selectedFiles.length}`,
-            description: file.name,
-            variant: 'default',
-          });
-
           const response = await fetch("/api/resume-upload", {
             method: "POST",
             body: formData
@@ -235,38 +233,46 @@ export default function DashboardPage() {
 
           const data = await response.json();
 
-          // Check if the upload was successful
           if (!response.ok) {
-            // Handle API errors
+            allFilesProcessed = false;
             toast({
-              title: `Failed to upload ${file.name}`,
+              title: `Failed to upload ${fileWithStatus.file.name}`,
               description: data.error || 'Unknown error occurred',
               variant: 'destructive',
             });
-            setLoading(false);
-            return;
+            setSelectedFiles(prev => prev.map((item, i) => 
+              i === index ? { ...item, loading: false, uploaded: false } : item
+            ));
+            continue;
           }
 
-          // Add a delay between file uploads (e.g., 2 seconds)
-          await delay(2000);
+          setSelectedFiles(prev => prev.map((item, i) => 
+            i === index ? { ...item, loading: false, uploaded: true } : item
+          ));
+
+          await delay(1000);
 
         } catch (error) {
-          console.error(`Error processing file ${file.name}`, error);
+          allFilesProcessed = false;
+          console.error(`Error processing file ${fileWithStatus.file.name}`, error);
           toast({
-            title: `Error processing ${file.name}`,
+            title: `Error processing ${fileWithStatus.file.name}`,
             variant: 'destructive',
           });
-          setLoading(false);
-          return;
+          setSelectedFiles(prev => prev.map((item, i) => 
+            i === index ? { ...item, loading: false, uploaded: false } : item
+          ));
         }
       }
 
-      // If all files processed successfully
-      toast({
-        title: 'All Resumes added and analysed successfully',
-        variant: 'default',
-      });
-      router.push('/all-resumes');
+      if (allFilesProcessed) {
+        toast({
+          title: 'All Resumes added and analysed successfully',
+          variant: 'default',
+        });
+        await delay(1500);
+        router.push('/all-resumes');
+      }
     } catch (error) {
       console.error("Error processing files", error);
       toast({
@@ -275,7 +281,89 @@ export default function DashboardPage() {
       });
     } finally {
       setLoading(false);
+      setIsUploading(false);
     }
+  };
+
+  const FileUploadZone = ({ 
+    onFileChange, 
+    disabled 
+  }: { 
+    onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    disabled?: boolean;
+  }) => {
+    const [isDragging, setIsDragging] = useState(false);
+
+    const handleDrag = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    const handleDragIn = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(true);
+    };
+
+    const handleDragOut = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+      
+      const files = e.dataTransfer.files;
+      const fakeEvent = {
+        target: {
+          files
+        }
+      } as React.ChangeEvent<HTMLInputElement>;
+      
+      onFileChange(fakeEvent);
+    };
+
+    return (
+      <div
+        className={`relative border-2 border-dashed rounded-lg p-6 transition-colors
+          ${isDragging 
+            ? 'border-primary bg-primary/5' 
+            : 'border-gray-300 dark:border-gray-700 hover:border-primary'
+          }
+          ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+        `}
+        onDragEnter={disabled ? undefined : handleDragIn}
+        onDragLeave={disabled ? undefined : handleDragOut}
+        onDragOver={disabled ? undefined : handleDrag}
+        onDrop={disabled ? undefined : handleDrop}
+      >
+        <input
+          type="file"
+          accept={ALLOWED_FILE_TYPES.join(',')}
+          multiple
+          onChange={onFileChange}
+          disabled={disabled}
+          className={`absolute inset-0 w-full h-full opacity-0 
+            ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} z-10`}
+        />
+        <div className="flex flex-col items-center justify-center space-y-2 text-center">
+          <div className="p-3 bg-primary/10 rounded-full">
+            <Upload className="w-6 h-6 text-primary" />
+          </div>
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium">
+              Drag & drop your files here or click to browse
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Supports PDF and Word documents (max 5MB each)
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -293,7 +381,7 @@ export default function DashboardPage() {
             <Select
               value={selectedPost}
               onValueChange={handlePostChange}
-              disabled={postsLoading || posts.length === 0}
+              disabled={postsLoading || posts.length === 0 || isUploading}
             >
               <SelectTrigger>
                 <SelectValue placeholder={
@@ -319,7 +407,7 @@ export default function DashboardPage() {
             <Select
               value={selectedStatus}
               onValueChange={handleStatusChange}
-              disabled={statusLoading || status.length === 0}
+              disabled={statusLoading || status.length === 0 || isUploading}
             >
               <SelectTrigger>
                 <SelectValue placeholder={
@@ -342,34 +430,62 @@ export default function DashboardPage() {
                 )}
               </SelectContent>
             </Select>
-            <Input
-              type="file"
-              accept={ALLOWED_FILE_TYPES.join(',')}
-              multiple
-              onChange={handleFileChange}
-              className="cursor-pointer"
+            <FileUploadZone 
+              onFileChange={handleFileChange} 
+              disabled={isUploading}
             />
 
             {/* File Preview Section */}
-            {previewUrls.length > 0 && (
-              <div className="grid grid-cols-3 gap-4">
-                {selectedFiles.map((file, index) => (
-                  <div
-                    key={index}
-                    className="relative overflow-hidden rounded-lg border bg-background p-2 flex flex-col items-center"
-                  >
-                    {renderFileIcon(file.type)}
-                    <div className="text-center mt-2 text-sm truncate">
-                      {file.name}
+            {selectedFiles.length > 0 && (
+              <div className="space-y-4">
+                <div className="text-sm text-muted-foreground">
+                  {selectedFiles.length} file(s) selected
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {selectedFiles.map((fileWithStatus, index) => (
+                    <div
+                      key={index}
+                      className="relative overflow-hidden rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="shrink-0">
+                          {fileWithStatus.loading ? (
+                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                          ) : fileWithStatus.uploaded ? (
+                            <div className="text-green-500">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="w-8 h-8"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <path d="M20 6L9 17l-5-5" />
+                              </svg>
+                            </div>
+                          ) : (
+                            renderFileIcon(fileWithStatus.file.type)
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">
+                            {fileWithStatus.file.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {(fileWithStatus.file.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
 
             <Button
               onClick={processFiles}
-              disabled={selectedFiles.length === 0 || !selectedPost || loading}
+              disabled={selectedFiles.length === 0 || !selectedPost || loading || isUploading}
               className="w-full"
             >
               {loading ? (
