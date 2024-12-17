@@ -18,7 +18,6 @@ import { TableFilter } from "./sub-components/functional/TableFilter"
 import { TableColumnToggle } from "./sub-components/functional/TableColumnToggle"
 import { TableExport } from "./sub-components/operational/TableExport"
 import { TableImport } from "./sub-components/operational/TableImport"
-import { statusStyles } from './data/status'
 import { useToast } from "@/hooks/use-toast"
 import { TableSelect } from "./sub-components/functional/TableSelect"
 import { TableAdd } from "./sub-components/operational/TableAdd"
@@ -43,6 +42,7 @@ interface StatusData {
     _id: string;
     status: string;
     createdBy: string;
+    color: string;
 }
 
 export function TableComponent({ config }: TableProps) {
@@ -262,8 +262,18 @@ export function TableComponent({ config }: TableProps) {
         // Handle status with special styling
         if (accessorKey === 'status') {
             const status = String(actualValue).toLowerCase();
+            // Find the matching status option to get its color
+            const statusOption = statusOptions.find(
+                opt => opt.status.toLowerCase() === status
+            );
             return (
-                <span className={statusStyles[status] || "text-primary"}>
+                <span
+                    className="px-2 py-1 rounded-full text-white"
+                    style={{
+                        backgroundColor: statusOption?.color || '#000000',
+                        display: 'inline-block'
+                    }}
+                >
                     {actualValue}
                 </span>
             );

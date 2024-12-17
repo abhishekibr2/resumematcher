@@ -17,7 +17,8 @@ export async function GET() {
         const statusData = status.map((status: any) => ({
             _id: status._id.toString(),
             status: status.status,
-            createdBy: status.createdBy
+            createdBy: status.createdBy,
+            color: status.color
         }));
         if (!status) {
             return NextResponse.json({ message: "Status not found" }, { status: 404 });

@@ -49,11 +49,13 @@ interface Role {
     can_change_gemini_api_key: boolean;
     can_change_gemini_prompts: boolean;
     can_change_company_settings: boolean;
+    can_change_gemini_model: boolean;
   };
   userPermissions: {
     can_delete_users: boolean;
     can_update_user_password: boolean;
     can_update_users: boolean;
+    can_change_gemini_model: boolean;
   };
 }
 
@@ -90,12 +92,14 @@ export default function RolesPage() {
       can_access_admin_panel: false,
       can_change_gemini_api_key: false,
       can_change_gemini_prompts: false,
-      can_change_company_settings: false
+      can_change_company_settings: false,
+      can_change_gemini_model: false
     },
     userPermissions: {
       can_delete_users: false,
       can_update_user_password: false,
-      can_update_users: false
+      can_update_users: false,
+      can_change_gemini_model: false
     }
   });
   const [editingRole, setEditingRole] = useState<Role | null>(null);
@@ -222,7 +226,7 @@ export default function RolesPage() {
         };
 
         setRoles([...roles, role]);
-        setNewRole({ id: '', name: "", description: "", permissions: [], adminPermissions: { can_access_admin_panel: false, can_change_gemini_api_key: false, can_change_gemini_prompts: false, can_change_company_settings: false }, userPermissions: { can_delete_users: false, can_update_user_password: false, can_update_users: false } });
+        setNewRole({ id: '', name: "", description: "", permissions: [], adminPermissions: { can_access_admin_panel: false, can_change_gemini_api_key: false, can_change_gemini_prompts: false, can_change_company_settings: false, can_change_gemini_model: false }, userPermissions: { can_delete_users: false, can_update_user_password: false, can_update_users: false, can_change_gemini_model: false } });
         setIsAddDialogOpen(false);
         toast({
           title: "Success",
@@ -249,12 +253,14 @@ export default function RolesPage() {
         can_access_admin_panel: false,
         can_change_gemini_api_key: false,
         can_change_gemini_prompts: false,
-        can_change_company_settings: false
+        can_change_company_settings: false,
+        can_change_gemini_model: false
       },
       userPermissions: role.userPermissions || {
         can_delete_users: false,
         can_update_user_password: false,
-        can_update_users: false
+        can_update_users: false,
+        can_change_gemini_model: false
       }
     });
     setIsEditDialogOpen(true);
@@ -279,12 +285,14 @@ export default function RolesPage() {
             can_access_admin_panel: false,
             can_change_gemini_api_key: false,
             can_change_gemini_prompts: false,
-            can_change_company_settings: false
+            can_change_company_settings: false,
+            can_change_gemini_model: false
           },
           userPermissions: editingRole.userPermissions || {
             can_delete_users: false,
             can_update_user_password: false,
-            can_update_users: false
+            can_update_users: false,
+            can_change_gemini_model: false
           }
         }),
       });
@@ -300,12 +308,14 @@ export default function RolesPage() {
                 can_access_admin_panel: false,
                 can_change_gemini_api_key: false,
                 can_change_gemini_prompts: false,
-                can_change_company_settings: false
+                can_change_company_settings: false,
+                can_change_gemini_model: false
               },
               userPermissions: editingRole.userPermissions || {
                 can_delete_users: false,
                 can_update_user_password: false,
-                can_update_users: false
+                can_update_users: false,
+                can_change_gemini_model: false
               }
             }
             : role
@@ -470,23 +480,23 @@ export default function RolesPage() {
                             </div>
                             <div className="flex items-center space-x-2">
                               <Checkbox
-                                id="prompts"
-                                checked={newRole.adminPermissions.can_change_gemini_prompts}
+                                id="model"
+                                checked={newRole.adminPermissions.can_change_gemini_model}
                                 onCheckedChange={(checked) =>
                                   setNewRole({
                                     ...newRole,
                                     adminPermissions: {
                                       ...newRole.adminPermissions,
-                                      can_change_gemini_prompts: checked as boolean
+                                      can_change_gemini_model: checked as boolean
                                     }
                                   })
                                 }
                               />
                               <label
-                                htmlFor="prompts"
+                                htmlFor="model"
                                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                               >
-                                Can Change Gemini Prompts
+                                Can Change Gemini Model
                               </label>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -855,6 +865,29 @@ export default function RolesPage() {
                                 Can change Company Settings
                               </label>
                             </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="edit-model"
+                                checked={editingRole?.adminPermissions.can_change_gemini_model || false}
+                                onCheckedChange={(checked) =>
+                                  setEditingRole(prev =>
+                                    prev ? {
+                                      ...prev,
+                                      adminPermissions: {
+                                        ...prev.adminPermissions,
+                                        can_change_gemini_model: checked as boolean
+                                      }
+                                    } : null
+                                  )
+                                }
+                              />
+                              <label
+                                htmlFor="edit-model"
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                              >
+                                Can Change Gemini Model
+                              </label>
+                            </div>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -1175,6 +1208,9 @@ export default function RolesPage() {
                           )}
                           {role.adminPermissions.can_change_company_settings && (
                             <Badge variant="secondary">Change Company Settings</Badge>
+                          )}
+                          {role.adminPermissions.can_change_gemini_model && (
+                            <Badge variant="secondary">Change Gemini Model</Badge>
                           )}
                         </div>
                         {role.userPermissions.can_delete_users && (

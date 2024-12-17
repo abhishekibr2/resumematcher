@@ -17,6 +17,10 @@ const settingsSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
+  geminiModel: {
+    type: String,
+    required: false,
+  }
 }, { timestamps: true });
 
 // Since we only want one settings document, we'll use a constant ID

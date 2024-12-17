@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
 
         // Configure Gemini model
         const model = genAI.getGenerativeModel({
-            model: "gemini-exp-1206",
+            model: settings?.geminiModel || "gemini-1.5-flash-8b",
         });
 
         const generationConfig = {

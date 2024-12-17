@@ -14,12 +14,14 @@ export interface AdminPermission {
   can_change_gemini_api_key: boolean;
   can_change_gemini_prompts: boolean;
   can_change_company_settings: boolean;
+  can_change_gemini_model: boolean;
 }
 
 export interface UserPermission {
   can_delete_users: boolean;
   can_update_user_password: boolean;
   can_update_users: boolean;
+  can_change_gemini_model: boolean;
 }
 
 export interface Role {
@@ -85,6 +87,10 @@ const RoleSchema = new mongoose.Schema(
                 default: false
             },
             can_change_company_settings: {
+                type: Boolean,
+                default: false
+            },
+            can_change_gemini_model: {
                 type: Boolean,
                 default: false
             }
