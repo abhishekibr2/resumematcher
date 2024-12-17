@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
         const formData = await req.formData();
         const file = formData.get('file') as File;
         const status = formData.get('status') as string;
+        const post = formData.get('postText') as string;
 
         // Validate file
         if (!file) {
@@ -98,7 +99,7 @@ export async function POST(req: NextRequest) {
 
         // Configure Gemini model
         const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash-8b",
+            model: "gemini-exp-1206",
         });
 
         const generationConfig = {
@@ -139,10 +140,9 @@ export async function POST(req: NextRequest) {
             },
             {
                 text: `Extract data from this resume and return a detailed JSON with the following structure:
-${JSON.stringify(resumeSchema, null, 2)}` + settings?.overwritePrompt
+${JSON.stringify(resumeSchema, null, 2)}\n\n${settings?.overwritePrompt}\n\nSpecific requirements: ${post}`
             }
         ];
-
         // Generate content
         const result = await model.generateContent({
             contents: [{ role: "user", parts: postParts }],
@@ -250,7 +250,7 @@ const resumeSchema = {
     ],
     "stats": {
         "Expertise": "give a shrot expertise title like MERN Stack,PHP developeretc ",
-        "Rating": "give a rating from 1 to 10 according to the job post.",
-        "should_contact": "true or false according to the job post. if he is not eligible for the job post then return false."
+        "Rating": "give a rating from 1 to 10 according to the specific requirements.",
+        "should_contact": "true or false according to the specific requirements. if he is not eligible for the specific requirements then return false."
     }
 };
