@@ -22,6 +22,7 @@ export async function GET() {
                 geminiApiKey: settings.geminiApiKey,
                 redirectToResume: settings.redirectToResume,
                 overwritePrompt: settings.overwritePrompt,
+                geminiModel: settings.geminiModel,
             }
         });
     } catch (error) {
@@ -37,7 +38,7 @@ export async function PUT(request: Request) {
     try {
         const body = await request.json();
         const session = await getServerSession(authOptions);
-        
+
         if (!session?.user?.email) {
             return NextResponse.json(
                 { success: false, message: "You are not logged in" },
@@ -47,9 +48,9 @@ export async function PUT(request: Request) {
 
         await connectToDatabase();
         const user = await User.findOne({ email: session?.user?.email });
-        const role = await Roles.findOne({ name: user.role });
-
+        const role = await Roles.findById(user.role);
         if (!role) {
+            console.log("Role not found");
             return NextResponse.json(
                 { success: false, message: "Role not found" },
                 { status: 403 }
@@ -58,6 +59,7 @@ export async function PUT(request: Request) {
 
         // Check permissions based on what's being updated
         if (body.geminiApiKey !== undefined && !role.adminPermissions.can_change_gemini_api_key) {
+            console.log("You don't have permission to change API key");
             return NextResponse.json(
                 { success: false, message: "You don't have permission to change API key" },
                 { status: 403 }
@@ -65,13 +67,23 @@ export async function PUT(request: Request) {
         }
 
         if (body.overwritePrompt !== undefined && !role.adminPermissions.can_change_gemini_prompts) {
+            console.log("You don't have permission to change prompts"); 
             return NextResponse.json(
                 { success: false, message: "You don't have permission to change prompts" },
                 { status: 403 }
             );
         }
 
+        if (body.geminiModel !== undefined && !role.adminPermissions.can_change_gemini_model) {
+            console.log("You don't have permission to change Gemini model");
+            return NextResponse.json(
+                { success: false, message: "You don't have permission to change Gemini model" },
+                { status: 403 }
+            );
+        }
+
         if (body.companyName !== undefined && !role.adminPermissions.can_change_company_settings) {
+            console.log("You don't have permission to change company settings");
             return NextResponse.json(
                 { success: false, message: "You don't have permission to change company settings" },
                 { status: 403 }
@@ -87,6 +99,7 @@ export async function PUT(request: Request) {
                 geminiApiKey: body.geminiApiKey,
                 redirectToResume: body.redirectToResume,
                 overwritePrompt: body.overwritePrompt,
+                geminiModel: body.geminiModel,
             });
         } else {
             // Only update fields that the user has permission to change
@@ -99,6 +112,9 @@ export async function PUT(request: Request) {
             }
             if (role.adminPermissions.can_change_gemini_prompts) {
                 settings.overwritePrompt = body.overwritePrompt;
+            }
+            if (role.adminPermissions.can_change_gemini_model) {
+                settings.geminiModel = body.geminiModel;
             }
         }
 

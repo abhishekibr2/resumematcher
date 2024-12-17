@@ -299,7 +299,7 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
                     }
                 })
 
-                // Hash the password before saving
+                // Hash the password before saving  
 
                 if (data.password) {
                     const salt = await bcrypt.genSalt(10);

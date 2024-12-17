@@ -28,6 +28,7 @@ const formSchema = z.object({
     }),
     redirectToResume: z.boolean(),
     overwritePrompt: z.string(),
+    geminiModel: z.string(),
 });
 
 export default function SettingsPage() {
@@ -40,6 +41,7 @@ export default function SettingsPage() {
             geminiApiKey: "",
             redirectToResume: false,
             overwritePrompt: "",
+            geminiModel: "",
         },
     });
 
@@ -115,6 +117,20 @@ export default function SettingsPage() {
                                 <FormDescription>
                                     Your Gemini API key will be encrypted before storing
                                 </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="geminiModel"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Gemini Model</FormLabel>
+                                <FormControl>
+                                    <Input type="text" placeholder="Enter Gemini Model" {...field} />
+                                </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}

@@ -57,6 +57,16 @@ export const statusTableConfig: TableConfig<StatusData> = {
       type: "hidden"
     },
     {
+      id: "color",
+      header: "Color",
+      accessorKey: "color",
+      className: "w-[200px] text-gray-900 font-semibold",
+      sortable: true,
+      filterable: true,
+      defaultVisible: true,
+      type: "color"
+    },
+    {
       id: "createdAt",
       header: "Created At",
       accessorKey: "createdAt",

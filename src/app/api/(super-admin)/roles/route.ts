@@ -44,7 +44,8 @@ export async function POST(request: Request) {
         can_access_admin_panel: false,
         can_change_gemini_api_key: false,
         can_change_gemini_prompts: false,
-        can_change_company_settings: false
+        can_change_company_settings: false,
+        can_change_gemini_model: false
       },
       userPermissions: data.userPermissions || {
         can_delete_users: false,
@@ -94,7 +95,8 @@ export async function PUT(request: Request) {
           can_access_admin_panel: false,
           can_change_gemini_api_key: false,
           can_change_gemini_prompts: false,
-          can_change_company_settings: false
+          can_change_company_settings: false,
+          can_change_gemini_model: false
         },
         userPermissions: updateData.userPermissions || {
           can_delete_users: false,
