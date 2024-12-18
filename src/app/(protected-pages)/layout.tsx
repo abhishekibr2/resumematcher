@@ -15,7 +15,7 @@ export default function RootLayout({
 }>) {
     const { data: session, status } = useSession();
     const [isLoading, setIsLoading] = useState(true);
-    const [isAdmin, setIsAdmin] = useState(false);
+    const [userRole, setUserRole] = useState(null);
     const [companyName, setCompanyName] = useState("");
     const [redirectToResume, setRedirectToResume] = useState(false);
     const router = useRouter();
@@ -23,7 +23,7 @@ export default function RootLayout({
     const checkAdmin = async () => {
         try {
             if (!session?.user?.role) {
-                setIsAdmin(false);
+                setUserRole(null);
                 return;
             }
 
@@ -48,10 +48,10 @@ export default function RootLayout({
                 throw new Error(data.message || 'Failed to verify admin status');
             }
 
-            setIsAdmin(data.isAdmin);
+            setUserRole(data.userRole);
         } catch (error) {
             console.error("Error checking admin status:", error);
-            setIsAdmin(false);
+            setUserRole(null);
         }
     };
 
@@ -72,8 +72,6 @@ export default function RootLayout({
 
     useEffect(() => {
         if (redirectToResume) {
-            console.log("Redirecting to all resumes");
-            console.log(redirectToResume);
             router.push("/all-resumes");
         }
     }, [redirectToResume]);
@@ -99,7 +97,7 @@ export default function RootLayout({
         <>
             {!isLoading ? (
                 <SidebarProvider>
-                    <AppSidebar isAdmin={isAdmin} companyName={companyName} />
+                    <AppSidebar userRole={userRole} companyName={companyName} />
                     <main className="w-full px-4">
                         <SidebarTrigger />
                         {children}

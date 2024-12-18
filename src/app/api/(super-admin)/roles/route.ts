@@ -1,6 +1,17 @@
 import { NextResponse } from 'next/server';
-import Role from '@/models/Roles';
 import { connectToDatabase } from '@/lib/mongodb';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/utils/authOptions";
+import { User } from "@/models/user";
+import { Role } from '@/models/Roles';
+
+// Helper function to check permissions
+async function checkEditPermission(userId: string) {
+  const user = await User.findById(userId).populate('role');
+  if (!user?.role?.adminPermissions?.can_edit_roles) {
+    throw new Error('You do not have permission to modify roles');
+  }
+}
 
 export async function GET() {
   try {
@@ -23,6 +34,26 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     await connectToDatabase();
+
+    // Get session and check permissions
+    const session = await getServerSession(authOptions);
+    if (!session?.user?._id) {
+      return NextResponse.json({
+        ok: false,
+        message: "Unauthorized"
+      }, { status: 401 });
+    }
+
+    // Check edit permission
+    try {
+      await checkEditPermission(session.user._id);
+    } catch (error) {
+      return NextResponse.json({
+        ok: false,
+        message: error instanceof Error ? error.message : "Unauthorized"
+      }, { status: 403 });
+    }
+
     const data = await request.json();
 
     // Check if role with same name exists
@@ -45,7 +76,9 @@ export async function POST(request: Request) {
         can_change_gemini_api_key: false,
         can_change_gemini_prompts: false,
         can_change_company_settings: false,
-        can_change_gemini_model: false
+        can_change_gemini_model: false,
+        can_access_roles: false,
+        can_edit_roles: false
       },
       userPermissions: data.userPermissions || {
         can_delete_users: false,
@@ -71,6 +104,26 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     await connectToDatabase();
+
+    // Get session and check permissions
+    const session = await getServerSession(authOptions);
+    if (!session?.user?._id) {
+      return NextResponse.json({
+        ok: false,
+        message: "Unauthorized"
+      }, { status: 401 });
+    }
+
+    // Check edit permission
+    try {
+      await checkEditPermission(session.user._id);
+    } catch (error) {
+      return NextResponse.json({
+        ok: false,
+        message: error instanceof Error ? error.message : "Unauthorized"
+      }, { status: 403 });
+    }
+
     const { id, ...updateData } = await request.json();
 
     // Check if role with same name exists (excluding current role)
@@ -91,18 +144,20 @@ export async function PUT(request: Request) {
       id,
       {
         ...updateData,
-        adminPermissions: updateData.adminPermissions || {
-          can_access_admin_panel: false,
-          can_change_gemini_api_key: false,
-          can_change_gemini_prompts: false,
-          can_change_company_settings: false,
-          can_change_gemini_model: false
-        },
-        userPermissions: updateData.userPermissions || {
-          can_delete_users: false,
-          can_update_user_password: false,
-          can_update_users: false
-        }
+        // adminPermissions: updateData.adminPermissions || {
+        //   can_access_admin_panel: false,
+        //   can_change_gemini_api_key: false,
+        //   can_change_gemini_prompts: false,
+        //   can_change_company_settings: false,
+        //   can_change_gemini_model: false,
+        //   can_access_roles: false,
+        //   can_edit_roles: false
+        // },
+        // userPermissions: updateData.userPermissions || {
+        //   can_delete_users: false,
+        //   can_update_user_password: false,
+        //   can_update_users: false
+        // }
       },
       { new: true } // Return updated document
     );
@@ -131,6 +186,26 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     await connectToDatabase();
+
+    // Get session and check permissions
+    const session = await getServerSession(authOptions);
+    if (!session?.user?._id) {
+      return NextResponse.json({
+        ok: false,
+        message: "Unauthorized"
+      }, { status: 401 });
+    }
+
+    // Check edit permission
+    try {
+      await checkEditPermission(session.user._id);
+    } catch (error) {
+      return NextResponse.json({
+        ok: false,
+        message: error instanceof Error ? error.message : "Unauthorized"
+      }, { status: 403 });
+    }
+
     const { id } = await request.json();
 
     const deletedRole = await Role.findByIdAndDelete(id);

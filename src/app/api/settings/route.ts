@@ -4,7 +4,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { authOptions } from "@/utils/authOptions";
 import { getServerSession } from 'next-auth';
 import { User } from '@/models/user';
-import Roles from '@/models/Roles';
+import { Role } from '@/models/Roles';
 
 export async function GET() {
     try {
@@ -48,7 +48,7 @@ export async function PUT(request: Request) {
 
         await connectToDatabase();
         const user = await User.findOne({ email: session?.user?.email });
-        const role = await Roles.findById(user.role);
+        const role = await Role.findById(user.role);
         if (!role) {
             console.log("Role not found");
             return NextResponse.json(
@@ -67,7 +67,7 @@ export async function PUT(request: Request) {
         }
 
         if (body.overwritePrompt !== undefined && !role.adminPermissions.can_change_gemini_prompts) {
-            console.log("You don't have permission to change prompts"); 
+            console.log("You don't have permission to change prompts");
             return NextResponse.json(
                 { success: false, message: "You don't have permission to change prompts" },
                 { status: 403 }

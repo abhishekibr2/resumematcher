@@ -22,7 +22,6 @@ export const authOptions: NextAuthOptions = {
           }),
         });
         const res = await result.json();
-
         if (!res.ok) {
           return null;
         }
@@ -32,7 +31,6 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account }) {
-      console.log(user)
       if (account?.provider === "google") {
         try {
           await connectToDatabase();
