@@ -55,7 +55,7 @@ export function TableAddStatusData({ config, onSuccess }: TableAddProps) {
 
             const statusResponse = await fetch('/api/status')
             const statusData = await statusResponse.json()
-            
+
             setIsOpen(false)
             setStatusName("")
             setColor("#000000")
@@ -64,7 +64,7 @@ export function TableAddStatusData({ config, onSuccess }: TableAddProps) {
                 description: "Status has been added successfully.",
                 variant: "default",
             })
-            
+
             if (onSuccess) {
                 onSuccess(statusData)
             }
@@ -103,7 +103,7 @@ export function TableAddStatusData({ config, onSuccess }: TableAddProps) {
                                 required
                             />
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-2 w-full flex items-center justify-center gap-4">
                             <Label htmlFor="color">Status Color</Label>
                             <div className="flex gap-4 items-center">
                                 <Input
@@ -112,10 +112,6 @@ export function TableAddStatusData({ config, onSuccess }: TableAddProps) {
                                     value={color}
                                     onChange={(e) => setColor(e.target.value)}
                                     className="w-[80px] h-[40px] cursor-pointer"
-                                />
-                                <div 
-                                    className="h-[40px] flex-1 rounded-md border"
-                                    style={{ backgroundColor: color }}
                                 />
                             </div>
                         </div>
