@@ -26,7 +26,7 @@ export const postsTableConfig: TableConfig<PostsData> = {
       id: "title",
       header: "Title",
       accessorKey: "title",
-      className: "w-[200px] text-gray-900 font-semibold",
+      className: "w-[200px] text-gray-900 ",
       sortable: true,
       filterable: true,
       defaultVisible: true,

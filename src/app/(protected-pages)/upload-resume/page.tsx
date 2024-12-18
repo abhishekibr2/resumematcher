@@ -299,11 +299,11 @@ export default function DashboardPage() {
         variant: 'destructive',
       });
     } finally {
+      // Navigate after a short delay, regardless of the upload results
+      await new Promise(resolve => setTimeout(resolve, 100));
+      router.push('/all-resumes');
       setLoading(false);
       setIsUploading(false);
-      // Navigate after a short delay, regardless of the upload results
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      router.push('/all-resumes');
     }
   };
 
@@ -432,13 +432,14 @@ export default function DashboardPage() {
               disabled={statusLoading || status.length === 0 || isUploading}
             >
               <SelectTrigger>
-                <SelectValue placeholder={
-                  statusLoading
-                    ? "Loading status..."
-                    : (statusError || "Select a Status")
-                } />
+                <SelectValue
+                  placeholder={
+                    statusLoading
+                      ? "Loading status..."
+                      : (statusError || "Select a Status")
+                  } />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent >
                 {status.length > 0 ? (
                   status.map((status) => (
                     <SelectItem key={status._id} value={status._id}>

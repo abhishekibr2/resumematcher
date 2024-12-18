@@ -4,6 +4,7 @@ import {
   BadgeCheck,
   ChevronsUpDown,
   LogOut,
+  Settings,
 } from "lucide-react"
 
 import {
@@ -33,11 +34,18 @@ import { ModeToggle } from "./Theme-toogle"
 
 export function NavUser({
   user,
+  userRole
 }: {
   user: {
     name: string
     email: string
     // avatar: string
+  }
+  userRole: {
+    adminPermissions: {
+      can_access_admin_panel: boolean
+      can_access_roles: boolean
+    }
   }
 }) {
   const { isMobile } = useSidebar()
@@ -91,6 +99,16 @@ export function NavUser({
                 Account
               </DropdownMenuItem>
             </DropdownMenuGroup>
+            {userRole?.adminPermissions?.can_access_admin_panel && (
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => {
+                  router.push('/admin')
+                }}>
+                  <Settings className="h-4 w-4" />
+                  Admin Panel
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => {
               signOut();

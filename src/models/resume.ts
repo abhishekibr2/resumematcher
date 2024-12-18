@@ -53,7 +53,7 @@ const resumeSchema = new mongoose.Schema({
   contact: contactSchema,
   summary: String,
   skills: [String],
-  status: { type: String, default: "Onboarding" },
+  status: { type: String, default: "Applied" },
   workExperience: [workExperienceSchema],
   education: [educationSchema],
   certifications: [certificationSchema],
@@ -66,6 +66,7 @@ const resumeSchema = new mongoose.Schema({
     experience: String
   },
   resumeFilePath: { type: String, required: true },
+  notes: String
 },
   {
     timestamps: true

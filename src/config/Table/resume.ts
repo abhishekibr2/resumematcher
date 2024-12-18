@@ -45,7 +45,7 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
   },
   styles: {
     wrapper: "py-8",
-    title: "text-4xl font-semibold text-primary mb-2",
+    title: "text-4xl text-primary mb-2",
     description: "text-sm text-secondary mb-6",
     table: "min-w-full divide-border rounded-lg overflow-hidden shadow-sm ",
     header: "bg-background/50 backdrop-blur-sm sticky top-0",
@@ -61,7 +61,7 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
       id: "fullName",
       header: "Full Name",
       accessorKey: "fullName",
-      className: "w-[200px] text-gray-900 font-semibold",
+      className: "w-[200px] text-gray-900",
       sortable: true,
       filterable: true,
       defaultVisible: true,
@@ -118,10 +118,10 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
       className: "w-[120px]",
       sortable: true,
       filterable: true,
-      type: "select",
+      type: "boolean",
       options: [
-        { label: "Yes", value: "true" },
-        { label: "No", value: "false" }
+        { label: "Yes", value: true },
+        { label: "No", value: false }
       ]
     },
     {
@@ -142,6 +142,15 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
       filterable: true,
       type: "select",
       options: []
+    },
+    {
+      id: "notes",
+      header: "Notes",
+      accessorKey: "notes",
+      className: "w-[150px]",
+      sortable: true,
+      filterable: true,
+      type: "textarea"
     },
     {
       id: "updatedAt",
@@ -264,6 +273,12 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
         label: 'Status',
         type: 'select',
         options: []
+      },
+      {
+        name: 'notes',
+        label: 'Notes',
+        type: 'textarea',
+        placeholder: 'Enter notes'
       }
     ]
   }

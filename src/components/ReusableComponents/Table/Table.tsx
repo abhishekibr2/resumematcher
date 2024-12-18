@@ -10,7 +10,7 @@ import {
 import { TableProps, SortingState, PaginationState, FilterValue } from "@/types/table.types"
 import { fetchTableData } from "@/lib/utils"
 import { useState, useEffect, useRef, useCallback } from "react"
-import { ChevronUp, ChevronDown, PlusIcon } from "lucide-react"
+import { ChevronUp, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TableSearch } from "./sub-components/functional/TableSearch"
 import { TablePagination } from "./sub-components/functional/TablePagination"
@@ -514,6 +514,7 @@ export function TableComponent({ config }: TableProps) {
 
                     {config.columnToggle?.enabled && (
                         <TableColumnToggle
+                            tableId={config.title?.toLowerCase() || 'default'}
                             columns={config.columns}
                             visibleColumns={visibleColumns}
                             onColumnToggle={setVisibleColumns}

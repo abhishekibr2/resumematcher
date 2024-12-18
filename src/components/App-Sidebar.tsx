@@ -83,25 +83,6 @@ export function AppSidebar({ userRole = null, companyName = "Default Company", .
                     },
                 ],
             },
-            ...(userRole?.adminPermissions?.can_access_admin_panel ? [{
-                title: "Admin",
-                url: "/admin",
-                icon: Settings,
-                items: [
-                    {
-                        title: "Users",
-                        url: "/users",
-                    },
-                    ...(userRole?.adminPermissions?.can_access_roles ? [{
-                        title: "Roles",
-                        url: "/roles",
-                    }] : []),
-                    {
-                        title: "Settings",
-                        url: "/settings",
-                    },
-                ],
-            }] : [])
         ],
     }
     return (
@@ -113,7 +94,7 @@ export function AppSidebar({ userRole = null, companyName = "Default Company", .
                 <NavMain items={data.navMain} />
             </SidebarContent>
             <SidebarFooter>
-                <NavUser user={data.user} />
+                <NavUser userRole={userRole} user={data.user} />
             </SidebarFooter>
             <SidebarRail />
         </Sidebar>
