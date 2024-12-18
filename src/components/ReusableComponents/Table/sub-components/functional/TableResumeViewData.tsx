@@ -130,44 +130,44 @@ export function TableResumeViewData({ isOpen, onClose, data, columns }: TableVie
         return String(value);
     };
 
-const handleViewResume = async () => {
-    if (!data?._id) return;
-    
-    try {
-        setIsDownloading(true);
-        const response = await fetch(`/api/get-resume`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ id: data._id }),
-        });
+    const handleViewResume = async () => {
+        if (!data?._id) return;
 
-        if (!response.ok) {
-            throw new Error('Failed to fetch resume');
+        try {
+            setIsDownloading(true);
+            const response = await fetch(`/api/get-resume`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: data._id }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch resume');
+            }
+
+            const { fileContent } = await response.json();
+
+            if (!fileContent) {
+                throw new Error('No file content received');
+            }
+
+            // Create blob directly from base64 content
+            const blob = new Blob([Buffer.from(fileContent, 'base64')], {
+                type: 'application/pdf'
+            });
+            const fileURL = URL.createObjectURL(blob);
+
+            setRetrievedFile(fileURL);
+            setShowResumePopup(true);
+
+        } catch (error) {
+            console.error('Error viewing resume:', error);
+        } finally {
+            setIsDownloading(false);
         }
-
-        const { fileContent } = await response.json();
-        
-        if (!fileContent) {
-            throw new Error('No file content received');
-        }
-
-        // Create blob directly from base64 content
-        const blob = new Blob([Buffer.from(fileContent, 'base64')], { 
-            type: 'application/pdf' 
-        });
-        const fileURL = URL.createObjectURL(blob);
-        
-        setRetrievedFile(fileURL);
-        setShowResumePopup(true);
-
-    } catch (error) {
-        console.error('Error viewing resume:', error);
-    } finally {
-        setIsDownloading(false);
-    }
-};
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -235,10 +235,10 @@ const handleViewResume = async () => {
                                 )}
                                 View Resume
                             </Button>
-                            
-                            <Button 
-                                type="submit" 
-                                disabled={isPending || !selectedPost} 
+
+                            <Button
+                                type="submit"
+                                disabled={isPending || !selectedPost}
                                 variant="outline"
                             >
                                 {isPending ? (
@@ -270,17 +270,17 @@ const handleViewResume = async () => {
                             setRetrievedFile(null);
                         }
                     }}>
-                        <DialogContent className="max-w-4xl h-[80vh]">
+                        <DialogContent className="max-w-5xl h-[90vh]">
                             <DialogHeader>
                                 <DialogTitle>Resume Preview</DialogTitle>
                             </DialogHeader>
-                            <div className="flex-1 w-full h-full">
-                                <iframe 
+                            <div className="w-full h-full overflow-hidden p-0 ">
+                                <iframe
                                     src={retrievedFile}
-                                    width="100%"
-                                    height="500px"
                                     title="PDF Viewer"
-                                    style={{ border: 'none' }}
+                                    width="100%"
+                                    height="5000px"
+                                    style={{ border: 'none'}}
                                 />
                             </div>
                         </DialogContent>
