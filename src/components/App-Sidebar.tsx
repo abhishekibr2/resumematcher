@@ -25,11 +25,11 @@ import { NavUser } from "./nav-user"
 import { NavMain } from "./nav-main"
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-    isAdmin?: boolean;
+    userRole?: any;
     companyName?: string;
 }
 
-export function AppSidebar({ isAdmin = false, companyName = "Default Company", ...props }: AppSidebarProps) {
+export function AppSidebar({ userRole = null, companyName = "Default Company", ...props }: AppSidebarProps) {
     const { data: session } = useSession();
     const data = {
         user: {
@@ -83,7 +83,7 @@ export function AppSidebar({ isAdmin = false, companyName = "Default Company", .
                     },
                 ],
             },
-            ...(isAdmin ? [{
+            ...(userRole?.adminPermissions?.can_access_admin_panel ? [{
                 title: "Admin",
                 url: "/admin",
                 icon: Settings,
@@ -92,10 +92,10 @@ export function AppSidebar({ isAdmin = false, companyName = "Default Company", .
                         title: "Users",
                         url: "/users",
                     },
-                    {
+                    ...(userRole?.adminPermissions?.can_access_roles ? [{
                         title: "Roles",
                         url: "/roles",
-                    },
+                    }] : []),
                     {
                         title: "Settings",
                         url: "/settings",

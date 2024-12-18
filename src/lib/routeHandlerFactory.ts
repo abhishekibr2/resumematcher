@@ -8,7 +8,11 @@ import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
 import 'jspdf-autotable'
 import bcrypt from 'bcryptjs';
-import Roles from '@/models/Roles'
+import { Role } from '@/models/Roles'
+import { connectToDatabase } from "./mongodb";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/utils/authOptions";
+import { User } from "@/models/user";
 
 // Add after imports
 declare module 'jspdf' {
@@ -24,8 +28,6 @@ interface RouteHandlerOptions {
     exportFields?: string[];
     importFields?: string[];
 }
-
-
 
 // Add this helper function before the export handler
 const formatObjectForExport = (obj: any, parentKey: string = ''): string => {
@@ -58,6 +60,29 @@ const setNestedValue = (obj: any, path: string, value: any) => {
     }
 
     current[keys[keys.length - 1]] = value
+}
+
+// Helper function to check user management permissions
+async function checkUserPermissions(userId: string, operation: 'delete' | 'update' | 'update_password') {
+  const user = await User.findById(userId).populate('role');
+  
+  switch (operation) {
+    case 'delete':
+      if (!user?.role?.userPermissions?.can_delete_users) {
+        throw new Error('You do not have permission to delete users');
+      }
+      break;
+    case 'update':
+      if (!user?.role?.userPermissions?.can_update_users) {
+        throw new Error('You do not have permission to update users');
+      }
+      break;
+    case 'update_password':
+      if (!user?.role?.userPermissions?.can_update_user_password) {
+        throw new Error('You do not have permission to update user passwords');
+      }
+      break;
+  }
 }
 
 export function createRouteHandlers({ model, permissions = [], searchableFields = [], exportFields = [], importFields = [] }: RouteHandlerOptions) {
@@ -234,11 +259,31 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
             try {
                 const data = await request.json()
 
+                // Get session and check permissions if this is a user operation
+                if (model.modelName === 'users') {
+                    const session = await getServerSession(authOptions);
+                    if (!session?.user?._id) {
+                        return NextResponse.json({
+                            status: 401,
+                            message: "Unauthorized"
+                        }, { status: 401 });
+                    }
+
+                    try {
+                        await checkUserPermissions(session.user._id, 'update');
+                    } catch (error) {
+                        return NextResponse.json({
+                            status: 403,
+                            message: error instanceof Error ? error.message : "Unauthorized"
+                        }, { status: 403 });
+                    }
+                }
+
                 // If this is a user creation and we have roleName but no role
                 if (model.modelName === 'users' && data.roleName && !data.role) {
                     try {
                         // Fetch the role using the roleName (which is actually the role ID)
-                        const role = await Roles.findById(data.roleName)
+                        const role = await Role.findById(data.roleName)
                         if (!role) {
                             return NextResponse.json({
                                 status: 400,
@@ -316,7 +361,6 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
                 try {
                     await item.save()
                 } catch (error) {
-                    console.log({ error })
                     if (error instanceof Error && error.name === 'ValidationError') {
                         return NextResponse.json({
                             status: 400,
@@ -352,6 +396,31 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
             try {
                 const data = await request.json()
                 const { _id, ...updateData } = data
+
+                // Get session and check permissions if this is a user operation
+                if (model.modelName === 'users') {
+                    const session = await getServerSession(authOptions);
+                    if (!session?.user?._id) {
+                        return NextResponse.json({
+                            status: 401,
+                            message: "Unauthorized"
+                        }, { status: 401 });
+                    }
+
+                    try {
+                        // Check for password update specifically
+                        if (updateData.password) {
+                            await checkUserPermissions(session.user._id, 'update_password');
+                        } else {
+                            await checkUserPermissions(session.user._id, 'update');
+                        }
+                    } catch (error) {
+                        return NextResponse.json({
+                            status: 403,
+                            message: error instanceof Error ? error.message : "Unauthorized"
+                        }, { status: 403 });
+                    }
+                }
 
                 if (!_id) {
                     return NextResponse.json({
@@ -418,6 +487,26 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
             }
             try {
                 const { _id } = await request.json()
+
+                // Get session and check permissions if this is a user operation
+                if (model.modelName === 'users') {
+                    const session = await getServerSession(authOptions);
+                    if (!session?.user?._id) {
+                        return NextResponse.json({
+                            status: 401,
+                            message: "Unauthorized"
+                        }, { status: 401 });
+                    }
+
+                    try {
+                        await checkUserPermissions(session.user._id, 'delete');
+                    } catch (error) {
+                        return NextResponse.json({
+                            status: 403,
+                            message: error instanceof Error ? error.message : "Unauthorized"
+                        }, { status: 403 });
+                    }
+                }
 
                 if (!_id) {
                     return NextResponse.json({
@@ -769,6 +858,31 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
             try {
                 const { ids, updates } = await request.json()
 
+                // Get session and check permissions if this is a user operation
+                if (model.modelName === 'users') {
+                    const session = await getServerSession(authOptions);
+                    if (!session?.user?._id) {
+                        return NextResponse.json({
+                            status: 401,
+                            message: "Unauthorized"
+                        }, { status: 401 });
+                    }
+
+                    try {
+                        // Check for password update specifically
+                        if (updates.password) {
+                            await checkUserPermissions(session.user._id, 'update_password');
+                        } else {
+                            await checkUserPermissions(session.user._id, 'update');
+                        }
+                    } catch (error) {
+                        return NextResponse.json({
+                            status: 403,
+                            message: error instanceof Error ? error.message : "Unauthorized"
+                        }, { status: 403 });
+                    }
+                }
+
                 if (updates.password) {
                     const salt = await bcrypt.genSalt(10);
                     const hashedPassword = await bcrypt.hash(updates.password, salt);
@@ -776,8 +890,8 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
                 }
 
                 await model.updateMany(
-                    { _id: { $in: ids } },  // Query to match documents
-                    { $set: updates }        // Update operation
+                    { _id: { $in: ids } },
+                    { $set: updates }
                 )
 
                 return NextResponse.json({
@@ -796,6 +910,26 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
         async bulkDelete(request: Request) {
             try {
                 const { ids } = await request.json()
+
+                // Get session and check permissions if this is a user operation
+                if (model.modelName === 'users') {
+                    const session = await getServerSession(authOptions);
+                    if (!session?.user?._id) {
+                        return NextResponse.json({
+                            status: 401,
+                            message: "Unauthorized"
+                        }, { status: 401 });
+                    }
+
+                    try {
+                        await checkUserPermissions(session.user._id, 'delete');
+                    } catch (error) {
+                        return NextResponse.json({
+                            status: 403,
+                            message: error instanceof Error ? error.message : "Unauthorized"
+                        }, { status: 403 });
+                    }
+                }
 
                 const result = await model.deleteMany({ _id: { $in: ids } })
 

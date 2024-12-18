@@ -14,12 +14,12 @@ export default function RootLayout({
     const { data: session, status } = useSession();
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
-    const [isAdmin, setIsAdmin] = useState(false);
+    const [userRole, setUserRole] = useState<any>(null);
 
     const checkAdmin = async () => {
         try {
             if (!session?.user?.role) {
-                setIsAdmin(false);
+                setUserRole(null);
                 setIsLoading(false);
                 return;
             }
@@ -40,16 +40,16 @@ export default function RootLayout({
             }
 
             const data = await response.json();
-            
+
             if (!data.ok) {
                 throw new Error(data.message || 'Failed to verify admin status');
             }
 
-            setIsAdmin(data.isAdmin);
+            setUserRole(data.userRole);
             setIsLoading(false);
         } catch (error) {
             console.error("Error checking admin status:", error);
-            setIsAdmin(false);
+            setUserRole(null);
             setIsLoading(false);
             toast({
                 description: "Failed to verify admin permissions",
@@ -75,20 +75,20 @@ export default function RootLayout({
     }, [status, session]);
 
     useEffect(() => {
-        if (!isLoading && status === "authenticated" && !isAdmin) {
+        if (!isLoading && status === "authenticated" && !userRole?.adminPermissions?.can_access_admin_panel) {
             toast({
                 description: "You are not authorized to access this page",
                 variant: "destructive",
             });
             router.push("/");
         }
-    }, [isAdmin, isLoading, status, router]);
+    }, [userRole, isLoading, status, router]);
 
     return (
         <>
             {!isLoading ? (
                 <>
-                    {isAdmin ? children : null}
+                    {userRole?.adminPermissions?.can_access_admin_panel ? children : null}
                 </>
             ) : (
                 <div className="min-h-screen bg-background flex items-center justify-center">

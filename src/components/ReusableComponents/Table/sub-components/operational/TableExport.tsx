@@ -32,7 +32,6 @@ export function TableExport({ config, endpoint, filters, search }: TableExportPr
             })
 
             const response = await fetch(`/api/${endpoint}&${params.toString()}`)
-            console.log({response})
             if (!response.ok) {
                 const errorData = await response.json()
                 throw new Error(errorData.message || 'Export failed')
