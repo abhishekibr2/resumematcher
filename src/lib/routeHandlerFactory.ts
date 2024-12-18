@@ -64,25 +64,25 @@ const setNestedValue = (obj: any, path: string, value: any) => {
 
 // Helper function to check user management permissions
 async function checkUserPermissions(userId: string, operation: 'delete' | 'update' | 'update_password') {
-  const user = await User.findById(userId).populate('role');
-  
-  switch (operation) {
-    case 'delete':
-      if (!user?.role?.userPermissions?.can_delete_users) {
-        throw new Error('You do not have permission to delete users');
-      }
-      break;
-    case 'update':
-      if (!user?.role?.userPermissions?.can_update_users) {
-        throw new Error('You do not have permission to update users');
-      }
-      break;
-    case 'update_password':
-      if (!user?.role?.userPermissions?.can_update_user_password) {
-        throw new Error('You do not have permission to update user passwords');
-      }
-      break;
-  }
+    const user = await User.findById(userId).populate('role');
+
+    switch (operation) {
+        case 'delete':
+            if (!user?.role?.userPermissions?.can_delete_users) {
+                throw new Error('You do not have permission to delete users');
+            }
+            break;
+        case 'update':
+            if (!user?.role?.userPermissions?.can_update_users) {
+                throw new Error('You do not have permission to update users');
+            }
+            break;
+        case 'update_password':
+            if (!user?.role?.userPermissions?.can_update_user_password) {
+                throw new Error('You do not have permission to update user passwords');
+            }
+            break;
+    }
 }
 
 export function createRouteHandlers({ model, permissions = [], searchableFields = [], exportFields = [], importFields = [] }: RouteHandlerOptions) {

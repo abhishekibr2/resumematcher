@@ -68,57 +68,6 @@ export function TableBulkEdit({
     const [loading, setLoading] = useState(false);
     const { toast } = useToast()
     const form = useForm()
-    const [isDownloading, setIsDownloading] = useState(false);
-
-    const fetchResumeFile = async (resumeId: string) => {
-        try {
-            const response = await fetch(`/api/get-resume`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ id: resumeId }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch resume');
-            }
-
-            // Get the filename from Content-Disposition header
-            const filename = response.headers
-                .get('Content-Disposition')
-                ?.split('filename=')[1]
-                ?.replace(/"/g, '');
-
-            // Convert to blob
-            const blob = await response.blob();
-
-            // Create a link to download the file
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = filename || 'resume.pdf';
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error('Error downloading resume:', error);
-        }
-    };
-
-    const handleDownload = async () => {
-        setIsDownloading(true);
-        try {
-            for (const item of selectedData) {
-                await fetchResumeFile(item._id);
-            }
-        } catch (error) {
-            // Handle error (show toast, etc.)
-        } finally {
-            setIsDownloading(false);
-        }
-    };
 
     useEffect(() => {
         async function fetchStatus() {
@@ -351,17 +300,6 @@ export function TableBulkEdit({
                     >
                         <Trash2 className="h-4 w-4" />
                         Delete ({selectedData.length})
-                    </Button>
-                )}
-                {config.title?.toLowerCase() === 'resumes' && (
-                    <Button
-                        variant="outline"
-                        className="gap-2"
-                        onClick={handleDownload}
-                        disabled={isDownloading}
-                    >
-                        <Download className="h-4 w-4" />
-                        Download Resume
                     </Button>
                 )}
             </div>

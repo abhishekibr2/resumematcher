@@ -7,14 +7,41 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Columns } from "lucide-react"
 import { TableColumn } from "@/types/table.types"
+import { useEffect } from "react"
 
 interface TableColumnToggleProps {
     columns: TableColumn[];
     visibleColumns: string[];
     onColumnToggle: (columns: string[]) => void;
+    tableId: string;
 }
 
-export function TableColumnToggle({ columns, visibleColumns, onColumnToggle }: TableColumnToggleProps) {
+export function TableColumnToggle({ 
+    columns, 
+    visibleColumns, 
+    onColumnToggle,
+    tableId 
+}: TableColumnToggleProps) {
+    useEffect(() => {
+        const savedColumns = localStorage.getItem(`table-columns-${tableId}`);
+        if (savedColumns) {
+            onColumnToggle(JSON.parse(savedColumns));
+        }
+    }, [tableId, onColumnToggle]);
+
+    const handleColumnToggle = (checked: boolean, columnKey: string) => {
+        let newVisibleColumns: string[];
+        
+        if (checked) {
+            newVisibleColumns = [...visibleColumns, columnKey];
+        } else {
+            newVisibleColumns = visibleColumns.filter(col => col !== columnKey);
+        }
+
+        localStorage.setItem(`table-columns-${tableId}`, JSON.stringify(newVisibleColumns));
+        onColumnToggle(newVisibleColumns);
+    };
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -28,13 +55,7 @@ export function TableColumnToggle({ columns, visibleColumns, onColumnToggle }: T
                     <DropdownMenuCheckboxItem
                         key={column.id}
                         checked={visibleColumns.includes(column.accessorKey)}
-                        onCheckedChange={(checked) => {
-                            if (checked) {
-                                onColumnToggle([...visibleColumns, column.accessorKey])
-                            } else {
-                                onColumnToggle(visibleColumns.filter(col => col !== column.accessorKey))
-                            }
-                        }}
+                        onCheckedChange={(checked) => handleColumnToggle(checked, column.accessorKey)}
                     >
                         {column.header}
                     </DropdownMenuCheckboxItem>

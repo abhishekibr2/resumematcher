@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { TableColumn } from "@/types/table.types"
 import { useState, useTransition, useEffect } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2 } from "lucide-react";
+import { Loader2, Download } from "lucide-react";
 import { nanoid } from 'nanoid'
 import { useRouter } from "next/navigation";
 
@@ -33,7 +33,10 @@ export function TableResumeViewData({ isOpen, onClose, data, columns }: TableVie
     const [selectedPost, setSelectedPost] = useState('');
     const [isPending, startTransition] = useTransition();
     const [isLoading, setIsLoading] = useState(true);
+    const [isDownloading, setIsDownloading] = useState(false);
     const router = useRouter();
+    const [retrievedFile, setRetrievedFile] = useState<string | null>(null);
+    const [showResumePopup, setShowResumePopup] = useState(false);
 
     useEffect(() => {
         const fetchPosts = async () => {
@@ -127,30 +130,73 @@ export function TableResumeViewData({ isOpen, onClose, data, columns }: TableVie
         return String(value);
     };
 
+const handleViewResume = async () => {
+    if (!data?._id) return;
+    
+    try {
+        setIsDownloading(true);
+        const response = await fetch(`/api/get-resume`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id: data._id }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch resume');
+        }
+
+        const { fileContent } = await response.json();
+        
+        if (!fileContent) {
+            throw new Error('No file content received');
+        }
+
+        // Create blob directly from base64 content
+        const blob = new Blob([Buffer.from(fileContent, 'base64')], { 
+            type: 'application/pdf' 
+        });
+        const fileURL = URL.createObjectURL(blob);
+        
+        setRetrievedFile(fileURL);
+        setShowResumePopup(true);
+
+    } catch (error) {
+        console.error('Error viewing resume:', error);
+    } finally {
+        setIsDownloading(false);
+    }
+};
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent onClick={(e) => e.stopPropagation()}>
                 <DialogHeader>
                     <DialogTitle>View Details</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-                    {columns.map((column) => {
-                        const value = column.accessorKey.includes('.')
-                            ? column.accessorKey.split('.').reduce((obj: any, key: string) => obj?.[key], data)
-                            : data[column.accessorKey];
 
-                        return (
-                            <div key={column.accessorKey} className="grid grid-cols-[100px,1fr] gap-4 items-start">
-                                <label className="text-sm font-medium text-gray-500">
-                                    {column.header}
-                                </label>
-                                <div className="text-sm break-words">
-                                    {formatValue(value, column)}
+                <ScrollArea className="max-h-[60vh]">
+                    <div className="space-y-4">
+                        {columns.map((column) => {
+                            const value = column.accessorKey.includes('.')
+                                ? column.accessorKey.split('.').reduce((obj: any, key: string) => obj?.[key], data)
+                                : data[column.accessorKey];
+
+                            return (
+                                <div key={column.accessorKey} className="grid grid-cols-[100px,1fr] gap-4 items-start">
+                                    <label className="text-sm font-medium text-gray-500">
+                                        {column.header}
+                                    </label>
+                                    <div className="text-sm break-words">
+                                        {formatValue(value, column)}
+                                    </div>
                                 </div>
-                            </div>
-                        );
-                    })}
-                </div>
+                            );
+                        })}
+                    </div>
+                </ScrollArea>
+
                 <div className="mt-4">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
@@ -174,7 +220,22 @@ export function TableResumeViewData({ isOpen, onClose, data, columns }: TableVie
                                 </Select>
                             )}
                         </div>
-                        <div className="flex justify-end">
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                variant="outline"
+                                className="gap-2"
+                                onClick={handleViewResume}
+                                disabled={isDownloading}
+                                type="button"
+                            >
+                                {isDownloading ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Download className="h-4 w-4" />
+                                )}
+                                View Resume
+                            </Button>
+                            
                             <Button 
                                 type="submit" 
                                 disabled={isPending || !selectedPost} 
@@ -199,6 +260,32 @@ export function TableResumeViewData({ isOpen, onClose, data, columns }: TableVie
                         </div>
                     </form>
                 </div>
+
+                {/* Resume Popup */}
+                {showResumePopup && retrievedFile && (
+                    <Dialog open={showResumePopup} onOpenChange={() => {
+                        setShowResumePopup(false);
+                        if (retrievedFile) {
+                            URL.revokeObjectURL(retrievedFile);
+                            setRetrievedFile(null);
+                        }
+                    }}>
+                        <DialogContent className="max-w-4xl h-[80vh]">
+                            <DialogHeader>
+                                <DialogTitle>Resume Preview</DialogTitle>
+                            </DialogHeader>
+                            <div className="flex-1 w-full h-full">
+                                <iframe 
+                                    src={retrievedFile}
+                                    width="100%"
+                                    height="500px"
+                                    title="PDF Viewer"
+                                    style={{ border: 'none' }}
+                                />
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                )}
             </DialogContent>
         </Dialog>
     );

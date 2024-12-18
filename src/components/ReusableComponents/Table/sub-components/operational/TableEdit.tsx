@@ -204,6 +204,43 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
 
         // Handle nested fields
         if (column.accessorKey.includes('.')) {
+            // Special handling for nested boolean fields
+            if (column.type === 'boolean') {
+                return (
+                    <div className="space-y-1" key={column.id}>
+                        <Label htmlFor={column.accessorKey} className="text-sm font-medium">
+                            {column.header}
+                        </Label>
+                        <Select
+                            value={String(getNestedValue(formData, column.accessorKey))}
+                            onValueChange={(value) => {
+                                const newValue = value === 'true';
+                                setFormData(prev => {
+                                    const newData = { ...prev };
+                                    setNestedValue(newData, column.accessorKey, newValue);
+                                    return newData;
+                                });
+                            }}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder={`Select ${column.header.toLowerCase()}`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {column.options?.map((option) => (
+                                    <SelectItem 
+                                        key={String(option.value)} 
+                                        value={String(option.value)}
+                                    >
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                );
+            }
+
+            // Handle other nested fields
             return (
                 <div className="space-y-2" key={column.id}>
                     <Label htmlFor={column.accessorKey}>{column.header}</Label>
@@ -323,7 +360,6 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
                 )
 
             case 'select':
-            case 'boolean':
             case 'gender':
                 return (
                     <div className="space-y-1" key={column.id}>
@@ -349,6 +385,39 @@ export function TableEdit({ config, data, onSuccess }: TableEditProps) {
                         </Select>
                     </div>
                 )
+
+            case 'boolean':
+                return (
+                    <div className="space-y-1" key={column.id}>
+                        <Label htmlFor={column.accessorKey} className="text-sm font-medium">
+                            {column.header}
+                        </Label>
+                        <Select
+                            value={String(formData[column.accessorKey])}
+                            onValueChange={(value) =>
+                                setFormData((prev) => ({ 
+                                    ...prev, 
+                                    [column.accessorKey]: value === 'true' 
+                                }))
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder={`Select ${column.header.toLowerCase()}`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {column.options?.map((option) => (
+                                    <SelectItem 
+                                        key={String(option.value)} 
+                                        value={String(option.value)}
+                                    >
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )
+
             case 'hidden':
                 return null
             case 'address':

@@ -45,7 +45,7 @@ export const userTableConfig: TableConfig<UserData> = {
       id: "name",
       header: "Name",
       accessorKey: "name",
-      className: "w-[200px] text-gray-900 font-semibold",
+      className: "w-[200px] text-gray-900",
       sortable: true,
       filterable: true,
       defaultVisible: true,

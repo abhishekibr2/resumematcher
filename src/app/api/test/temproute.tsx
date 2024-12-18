@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile } from 'fs/promises';
 import path from 'path';
 import fs from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 import {
     GoogleGenerativeAI,
     HarmCategory,
@@ -12,8 +13,6 @@ import { GoogleAIFileManager } from "@google/generative-ai/server";
 import { connectToDatabase } from '@/lib/mongodb';
 import { Resume } from '@/models/resume';
 import Settings from '@/models/settings';
-import * as ftp from "basic-ftp";
-import { Readable, Writable } from 'stream';
 
 // Resume parsing configuration
 const ALLOWED_FILE_TYPES = [
@@ -25,10 +24,6 @@ const ALLOWED_FILE_TYPES = [
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export async function POST(req: NextRequest) {
-
-    const client = new ftp.Client();
-    client.ftp.verbose = true; // Enable logs for debugging
-
     try {
         // Parse form data
         const formData = await req.formData();
@@ -53,18 +48,21 @@ export async function POST(req: NextRequest) {
                 error: "File size exceeds 5MB limit"
             }, { status: 400 });
         }
+        // Generate unique filename
+        // const uniqueSuffix = `${uuidv4()}${path.extname(file.name)}`;
+        // const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'resumes');
+        // const filePath = path.join(uploadDir, uniqueSuffix);
 
         // Use original filename instead of unique suffix
         const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'resumes');
         const filePath = path.join(uploadDir, file.name);
 
-        // At the start of processing
-        const bytes = await file.arrayBuffer();
-        const fileBuffer = Buffer.from(bytes);
-
-        // Write to disk for Gemini
+        // Ensure upload directory exists
         await fs.promises.mkdir(uploadDir, { recursive: true });
-        await writeFile(filePath, fileBuffer);
+
+        // Convert file to buffer and write to disk
+        const bytes = await file.arrayBuffer();
+        await writeFile(filePath, Buffer.from(bytes));
 
         // Validate Gemini API key
         const settings = await Settings.findOne({});
@@ -172,42 +170,18 @@ ${JSON.stringify(resumeSchema, null, 2)}\n\n${settings?.overwritePrompt}\n\nSpec
                 }, { status: 409 }); // 409 Conflict status code
             }
 
-            // Create resume document first to get the _id
+            // If no duplicate, save the resume
             const resume = new Resume({
                 ...parsedResume,
+                resumeFilePath: filePath,
                 status: status
             });
+            await resume.save();
 
-            // Connect to BunnyCDN FTP
-            await client.access({
-                host: "storage.bunnycdn.com",
-                user: "ibr-resumes",
-                password: "85f77125-3524-498e-9a9655a805b7-690d-4600",
-                port: 21,
-                secure: false,
+            return NextResponse.json({
+                message: "Resume processed successfully",
+                data: parsedResume
             });
-
-            // Upload file using stream
-            const uploadPath = `/resumes/${resume._id.toString()}`;
-            const stream = Readable.from(fileBuffer);
-            
-            try {
-                await client.uploadFrom(stream, uploadPath);
-                console.log('File uploaded successfully to BunnyCDN');
-                
-                // Update resume with file path and save
-                resume.resumeFilePath = uploadPath;
-                await resume.save();
-                fs.unlinkSync(filePath);
-                return NextResponse.json({
-                    message: "Resume processed successfully",
-                    data: parsedResume
-                });
-            } catch (ftpError) {
-                console.error('FTP upload error:', ftpError);
-                // If FTP upload fails, don't save the resume
-                throw new Error('Failed to upload file to storage');
-            }
 
         } catch (error) {
             console.error("Error during file processing:", error);
@@ -223,10 +197,7 @@ ${JSON.stringify(resumeSchema, null, 2)}\n\n${settings?.overwritePrompt}\n\nSpec
             error: "Internal Server Error",
             details: error instanceof Error ? error.message : String(error)
         }, { status: 500 });
-    } finally {
-        client.close();
     }
-
 }
 
 // Parse Gemini response
