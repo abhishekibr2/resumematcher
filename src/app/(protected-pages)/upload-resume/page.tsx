@@ -103,6 +103,16 @@ export default function DashboardPage() {
     fetchPosts();
   }, []);
 
+  // Add this near your other useEffects
+  useEffect(() => {
+    if (status.length > 0) {
+      const appliedStatus = status.find(s => s.status.toLowerCase() === 'applied');
+      if (appliedStatus) {
+        setSelectedStatus(appliedStatus._id);
+      }
+    }
+  }, [status]);
+
   // Improved file validation
   const validateFiles = (files: FileList | null): File[] => {
     if (!files) return [];
