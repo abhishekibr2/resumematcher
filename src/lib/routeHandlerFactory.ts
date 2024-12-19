@@ -13,6 +13,7 @@ import { connectToDatabase } from "./mongodb";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/utils/authOptions";
 import { User } from "@/models/user";
+import * as ftp from "basic-ftp";
 
 // Add after imports
 declare module 'jspdf' {
@@ -538,6 +539,20 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
                         }, { status: 200 })
                     }
 
+                    const client = new ftp.Client();
+                    client.ftp.verbose = true; // Enable logs for debugging
+                    // Connect to BunnyCDN FTP
+                    await client.access({
+                        host: "storage.bunnycdn.com",
+                        user: "ibr-resumes",
+                        password: "85f77125-3524-498e-9a9655a805b7-690d-4600",
+                        port: 21,
+                        secure: false,
+                    });
+
+                    // Upload file using stream
+                    const uploadPath = `/resumes/${_id.toString()}`;
+                    await client.remove(uploadPath);
                     return NextResponse.json({
                         status: 200,
                         message: "Item deleted successfully"
@@ -943,6 +958,23 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
                         }, { status: 403 });
                     }
                 }
+
+                const client = new ftp.Client();
+                client.ftp.verbose = true; // Enable logs for debugging
+                // Connect to BunnyCDN FTP
+                await client.access({
+                    host: "storage.bunnycdn.com",
+                    user: "ibr-resumes",
+                    password: "85f77125-3524-498e-9a9655a805b7-690d-4600",
+                    port: 21,
+                    secure: false,
+                });
+
+                await Promise.all(ids.map(async (id: string) => {
+                    // Upload file using stream
+                    const uploadPath = `/resumes/${id}`;
+                    await client.remove(uploadPath);
+                }));
 
                 const result = await model.deleteMany({ _id: { $in: ids } })
 

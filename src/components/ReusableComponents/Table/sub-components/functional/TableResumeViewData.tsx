@@ -274,12 +274,12 @@ export function TableResumeViewData({ isOpen, onClose, data, columns }: TableVie
                             <DialogHeader>
                                 <DialogTitle>Resume Preview</DialogTitle>
                             </DialogHeader>
-                            <div className="w-full h-full overflow-hidden p-0 ">
+                            <div className="w-full h-full overflow-scroll">
                                 <iframe
                                     src={retrievedFile}
                                     title="PDF Viewer"
                                     width="100%"
-                                    height="5000px"
+                                    height="1200px"
                                     style={{ border: 'none'}}
                                 />
                             </div>
