@@ -205,10 +205,23 @@ export function createRouteHandlers({ model, permissions = [], searchableFields 
                         }, { status: 400 })
                     }
 
-                    const items = await model.find(finalQuery)
+                    let items = await model.find(finalQuery)
                         .sort(sortOptions)
                         .skip((page - 1) * pageSize)
-                        .limit(pageSize)
+                        .limit(pageSize);
+
+                    if (model.modelName === 'users') {
+                        items = await Promise.all(items.map(async (item) => {
+                            const plainItem = item.toObject();
+                            if (plainItem.role) {
+                                // Fetch the role document using the role ID
+                                const roleDoc = await Role.findById(plainItem.role);
+                                // Replace role ID with role name
+                                plainItem.roleName = roleDoc?.name || 'Unknown Role';
+                            }
+                            return plainItem;
+                        }));
+                    }
 
                     // Sanitize items before sending
                     const sanitizedItems = sanitizeItems(items);

@@ -77,7 +77,21 @@ export function TableComponent({ config }: TableProps) {
 
     // New state for status filter
     const [statusOptions, setStatusOptions] = useState<StatusData[]>([])
-    const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
+    const [selectedStatus, setSelectedStatus] = useState<string | null>(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('selectedResumeStatus') || null;
+        }
+        return null;
+    });
+
+    // Add these new states near your other state declarations
+    const [hrOptions, setHrOptions] = useState<{ _id: string; name: string; }[]>([]);
+    const [selectedHr, setSelectedHr] = useState<string | null>(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('selectedResumeHr') || null;
+        }
+        return null;
+    });
 
     // Fetch status options on component mount
     useEffect(() => {
@@ -116,6 +130,44 @@ export function TableComponent({ config }: TableProps) {
             setFilters(filteredFilters)
         }
     }, [selectedStatus])
+
+    // Add this useEffect to fetch HR users
+    useEffect(() => {
+        const fetchHrOptions = async () => {
+            try {
+                const response = await fetch('/api/get-hr');
+                const data = await response.json();
+                setHrOptions(data);
+            } catch (error) {
+                console.error('Failed to fetch HR options', error);
+                toast({
+                    title: "Error",
+                    description: "Failed to load HR options",
+                    variant: "destructive"
+                });
+            }
+        };
+
+        fetchHrOptions();
+    }, []);
+
+    // Add this useEffect to update filters when HR selection changes
+    useEffect(() => {
+        // Remove existing createdBy filter if any
+        const filteredFilters = filters.filter(f => f.column !== 'createdBy');
+
+        // Add new createdBy filter if an HR is selected
+        if (selectedHr !== "all_hr") {
+            const hrFilter: FilterValue = {
+                column: 'createdBy',
+                operator: 'equals',
+                value: selectedHr || ""
+            };
+            setFilters([...filteredFilters, hrFilter]);
+        } else {
+            setFilters(filteredFilters);
+        }
+    }, [selectedHr]);
 
     const loadTableData = useCallback(async (sortParams = '', searchParams = '') => {
         if (initialLoading) {
@@ -457,23 +509,62 @@ export function TableComponent({ config }: TableProps) {
                         />
                     )}
 
-                    {config.title?.toLowerCase() === 'resumes' && statusOptions.length > 0 && (
-                        <Select
-                            value={selectedStatus || undefined}
-                            onValueChange={(value) => setSelectedStatus(value || null)}
-                        >
-                            <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Filter by Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value={"all_statuses"}>All Statuses</SelectItem>
-                                {statusOptions.map((statusItem) => (
-                                    <SelectItem key={statusItem._id} value={statusItem.status}>
-                                        {statusItem.status}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                    {config.title?.toLowerCase() === 'resumes' && (
+                        <>
+                            {/* Existing Status filter */}
+                            <Select
+                                value={selectedStatus || undefined}
+                                onValueChange={(value) => {
+                                    setSelectedStatus(value);
+                                    if (typeof window !== 'undefined') {
+                                        if (value === 'all_statuses') {
+                                            localStorage.removeItem('selectedResumeStatus');
+                                        } else {
+                                            localStorage.setItem('selectedResumeStatus', value);
+                                        }
+                                    }
+                                }}
+                            >
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Filter by Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all_statuses">All Statuses</SelectItem>
+                                    {statusOptions.map((statusItem) => (
+                                        <SelectItem key={statusItem._id} value={statusItem.status}>
+                                            {statusItem.status}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            {/* New HR filter */}
+                            <Select
+                                value={selectedHr || undefined}
+                                onValueChange={(value) => {
+                                    setSelectedHr(value);
+                                    if (typeof window !== 'undefined') {
+                                        if (value === 'all_hr') {
+                                            localStorage.removeItem('selectedResumeHr');
+                                        } else {
+                                            localStorage.setItem('selectedResumeHr', value);
+                                        }
+                                    }
+                                }}
+                            >
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Filter by HR" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all_hr">All HR</SelectItem>
+                                    {hrOptions.map((hr) => (
+                                        <SelectItem key={hr._id} value={hr.name}>
+                                            {hr.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </>
                     )}
 
                     {config.select?.enabled && getSelectedCount() > 0 && (
