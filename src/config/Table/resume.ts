@@ -153,6 +153,15 @@ export const resumeTableConfig: TableConfig<ResumeData> = {
       type: "textarea"
     },
     {
+      id: "createdBy",
+      header: "Created By",
+      accessorKey: "createdBy",
+      className: "w-[150px]",
+      sortable: true,
+      filterable: true,
+      type: "text"
+    },
+    {
       id: "updatedAt",
       header: "Updated At",
       accessorKey: "updatedAt",

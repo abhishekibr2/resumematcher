@@ -66,7 +66,11 @@ const resumeSchema = new mongoose.Schema({
     experience: String
   },
   resumeFilePath: { type: String, required: true },
-  notes: String
+  notes: String,
+  createdBy: {
+    type: String,
+    required: false,
+  }
 },
   {
     timestamps: true

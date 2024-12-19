@@ -14,6 +14,8 @@ import { Resume } from '@/models/resume';
 import Settings from '@/models/settings';
 import * as ftp from "basic-ftp";
 import { Readable, Writable } from 'stream';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/utils/authOptions';
 
 // Resume parsing configuration
 const ALLOWED_FILE_TYPES = [
@@ -30,6 +32,8 @@ export async function POST(req: NextRequest) {
     client.ftp.verbose = true; // Enable logs for debugging
 
     try {
+        const session = await getServerSession(authOptions);
+        const user = session?.user;
         // Parse form data
         const formData = await req.formData();
         const file = formData.get('file') as File;
@@ -197,6 +201,7 @@ ${JSON.stringify(resumeSchema, null, 2)}\n\n${settings?.overwritePrompt}\n\nSpec
                 
                 // Update resume with file path and save
                 resume.resumeFilePath = uploadPath;
+                resume.createdBy = user?.name;
                 await resume.save();
                 fs.unlinkSync(filePath);
                 return NextResponse.json({
