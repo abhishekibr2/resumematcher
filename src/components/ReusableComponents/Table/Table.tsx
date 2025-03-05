@@ -251,18 +251,6 @@ export function TableComponent({ config }: TableProps) {
         }))
     }
 
-    const formatAddress = (address: any) => {
-        if (!address) return '';
-        const parts = [
-            address.street,
-            address.city,
-            address.state,
-            address.country,
-            address.postalCode
-        ].filter(Boolean);
-        const addressString = parts.join(', ');
-        return addressString.length >= 10 ? addressString.slice(0, 10) + '...' : addressString;
-    };
 
     const truncateText = (text: string, maxLength: number = 25): string => {
         if (text.length <= maxLength) return text;
@@ -648,6 +636,7 @@ export function TableComponent({ config }: TableProps) {
                                             config.styles?.headerCell,
                                             column.className,
                                             column.sortable && "cursor-pointer select-none"
+                                            && "pl-2"
                                         )}
                                         onClick={() => {
                                             if (column.sortable) {
